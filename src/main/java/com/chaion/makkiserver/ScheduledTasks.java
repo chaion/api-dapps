@@ -1,5 +1,7 @@
 package com.chaion.makkiserver;
 
+import com.chaion.makkiserver.exchange.CurrencyService;
+import com.chaion.makkiserver.exchange.ExchangePool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +21,7 @@ public class ScheduledTasks {
     @Autowired
     private ExchangePool pool;
 
-    @Scheduled(fixedRate = 60 * 1000)
+    @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchCurrencyRate() {
         logger.info("fetch currency rate");
 

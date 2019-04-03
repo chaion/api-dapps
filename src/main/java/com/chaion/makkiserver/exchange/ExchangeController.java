@@ -1,4 +1,4 @@
-package com.chaion.makkiserver;
+package com.chaion.makkiserver.exchange;
 
 import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;

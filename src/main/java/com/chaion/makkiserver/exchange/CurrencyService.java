@@ -1,10 +1,12 @@
-package com.chaion.makkiserver;
+package com.chaion.makkiserver.exchange;
 
+import com.chaion.makkiserver.ServiceException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,12 +23,14 @@ public class CurrencyService {
 
     @Autowired
     RestTemplate rest;
+    @Value("${marketcap_key}")
+    String apiKey;
 
     public BigDecimal fetchCurrency(String cryptoCurrency, String fiatCurrency) throws ServiceException {
         logger.info("fetch exchange rate: crypto=" + cryptoCurrency + ", fiat=" + fiatCurrency);
 
         final HttpHeaders headers = new HttpHeaders();
-        headers.set("X-CMC_PRO_API_KEY", "a4fa68bd-6ff6-468e-85e1-0baf709b658d");
+        headers.set("X-CMC_PRO_API_KEY", apiKey);
         final HttpEntity<String> entity = new HttpEntity<>(headers);
 
         String url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=" +
