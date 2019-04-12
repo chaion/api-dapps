@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-
+import java.util.Map;
 @Component
 public class ScheduledTasks {
 
@@ -26,13 +26,13 @@ public class ScheduledTasks {
         logger.info("fetch currency rate");
 
         for (String crypto : pool.getCryptoList()) {
-            for (String currency : pool.getFiatList()) {
-                try {
-                    BigDecimal price = currencyService.fetchCurrency(crypto, currency);
-                    pool.updatePrice(crypto, currency, price);
-                } catch (ServiceException e) {
-                    logger.error("fetch [" + crypto + "," + currency + "] failed: " + e.getMessage());
+            try{
+                Map<String,BigDecimal> prices = currencyService.fetchCurrency(crypto, pool.getFiatList());
+                for(String currency: prices.keySet()){
+                    pool.updatePrice(crypto, currency, prices.get(currency));
                 }
+            }catch (ServiceException e) {
+                logger.error("fetch [" + crypto +  "] failed: " + e.getMessage());
             }
         }
         pool.dump();
