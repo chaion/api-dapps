@@ -25,6 +25,7 @@ public class ExchangePool {
         fiatList.add("USD");
         fiatList.add("CAD");
         fiatList.add("CNY");
+        fiatList.add("BTC");
     }
 
     public void updatePrice(String crypto, String fiat, BigDecimal price) {
