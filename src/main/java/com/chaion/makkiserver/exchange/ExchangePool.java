@@ -22,6 +22,7 @@ public class ExchangePool {
     public ExchangePool() {
         cryptoList.add("AION");
 
+        fiatList.add("BTC");
         fiatList.add("USD");
         fiatList.add("ALL");
         fiatList.add("DZD");
