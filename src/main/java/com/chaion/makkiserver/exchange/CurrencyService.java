@@ -29,33 +29,45 @@ public class CurrencyService {
     public Map<String,BigDecimal> fetchCurrency(String cryptoCurrency, List<String> fiatCurrencys) throws ServiceException {
         logger.info("fetch exchange rate: crypto=" + cryptoCurrency + ", fiat=" + String.join(",",fiatCurrencys));
 
+        Map<String,BigDecimal> prices = new HashMap<>();
+
         final HttpHeaders headers = new HttpHeaders();
         final HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=" +
-                cryptoCurrency + "&tsyms=" + String.join(",",fiatCurrencys);
-        logger.info("fetch url: " + url);
-        ResponseEntity<String> resp = rest.exchange(url, HttpMethod.GET, entity, String.class);
-        String body = resp.getBody();
+        int endIndex = 0;
 
-        JsonObject root = new JsonParser().parse(body).getAsJsonObject();
-        if (root.has("RAW")) {
-            Map<String,BigDecimal> prices = new HashMap<>();
-            JsonObject raw = root.get("RAW").getAsJsonObject();
-            JsonObject crypto = raw.get(cryptoCurrency).getAsJsonObject();
-            for(String fiatCurrency:fiatCurrencys) {
-                JsonObject currency = crypto.get(fiatCurrency).getAsJsonObject();
-                BigDecimal price = currency.get("PRICE").getAsBigDecimal();
-                prices.put(fiatCurrency,price);
+        while (endIndex < fiatCurrencys.size()) {
+            List<String> targetCurrencies = fiatCurrencys.subList(endIndex, Math.min(endIndex + 20, fiatCurrencys.size()));
+            String url = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=" +
+                    cryptoCurrency + "&tsyms=" + String.join(",", targetCurrencies);
+            endIndex += 20;
+
+            logger.info("fetch url: " + url);
+            ResponseEntity<String> resp = rest.exchange(url, HttpMethod.GET, entity, String.class);
+            String body = resp.getBody();
+
+            JsonObject root = new JsonParser().parse(body).getAsJsonObject();
+            if (root.has("RAW")) {
+                JsonObject raw = root.get("RAW").getAsJsonObject();
+                JsonObject crypto = raw.get(cryptoCurrency).getAsJsonObject();
+                for (String fiatCurrency : targetCurrencies) {
+                    if (crypto.has(fiatCurrency)) {
+                        JsonObject currency = crypto.get(fiatCurrency).getAsJsonObject();
+                        BigDecimal price = currency.get("PRICE").getAsBigDecimal();
+                        prices.put(fiatCurrency, price);
+                    } else {
+                        logger.info(fiatCurrency + " is unsupported");
+                    }
+                }
+            } else {
+                int errorType = root.get("Type").getAsInt();
+                String errorMessage = root.get("Message").getAsString();
+
+                logger.info("fetch failed: errorType=" + errorType + ", errorMessage=" + errorMessage);
+                throw new ServiceException(errorType, errorMessage);
             }
-            logger.info("fetch result:" + prices.toString());
-            return prices;
-        } else {
-            int errorType = root.get("Type").getAsInt();
-            String errorMessage = root.get("Message").getAsString();
-
-            logger.info("fetch failed: errorType=" + errorType + ", errorMessage=" + errorMessage);
-            throw new ServiceException(errorType, errorMessage);
         }
+        logger.info("fetch result:" + prices.toString());
+        return prices;
     }
 }
