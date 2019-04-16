@@ -2,6 +2,8 @@ package com.chaion.makkiserver.version;
 
 import org.springframework.data.annotation.Id;
 
+import java.util.Map;
+
 public class AppVersion {
     @Id
     private String id;
@@ -9,7 +11,7 @@ public class AppVersion {
     private int versionCode;
     private String platform;
     private boolean mandatory;
-    private String updates;
+    private Map<String, String> updatesMap;
     private String url;
 
     public String getId() {
@@ -52,12 +54,12 @@ public class AppVersion {
         this.mandatory = mandatory;
     }
 
-    public String getUpdates() {
-        return updates;
+    public Map<String, String> getUpdatesMap() {
+        return updatesMap;
     }
 
-    public void setUpdates(String updates) {
-        this.updates = updates;
+    public void setUpdatesMap(Map<String, String> updatesMap) {
+        this.updatesMap = updatesMap;
     }
 
     public String getUrl() {
@@ -76,7 +78,8 @@ public class AppVersion {
                 ", versionCode=" + versionCode +
                 ", platform='" + platform + '\'' +
                 ", mandatory=" + mandatory +
-                ", updates='" + updates + '\'' +
+                ", updatesMap=" + updatesMap +
+                ", url='" + url + '\'' +
                 '}';
     }
 }
