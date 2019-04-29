@@ -1,6 +1,6 @@
 package com.chaion.makkiserver.dapps;
 
-import com.chaion.makkiserver.dapps.verification.DAppPkgProcessor;
+import com.chaion.makkiserver.dapps.verification.DAppProcessor;
 import com.chaion.makkiserver.dapps.verification.VerifyException;
 import com.chaion.makkiserver.exception.CodedErrorEnum;
 import com.chaion.makkiserver.exception.CodedException;
@@ -43,12 +43,12 @@ public class DAppsController {
     StorageProperties storageProperties;
 
     @Autowired
-    DAppPkgProcessor pkgProcessor;
+    DAppProcessor processor;
 
     //////////////////////////////////////////////
     // for mobile side
     //////////////////////////////////////////////
-    @RequestMapping(value="/dappsByKeyword", method = RequestMethod.GET)
+    @GetMapping("/dappsByKeyword")
     public List<DApp> getDAppsByKeyword(@RequestParam(value = "keyword") String keyword,
                                @RequestParam(value = "offset") int offset,
                                @RequestParam(value = "limit") int limit) {
@@ -83,22 +83,86 @@ public class DAppsController {
         return listOfDapp;
     }
 
-    @RequestMapping(value="/dapp", method = RequestMethod.GET)
+    @GetMapping("/dapp")
     public DApp getDapp(@RequestParam(value = "id") String id) {
         Optional<DApp> dapp = repo.findById(id);
         if (dapp.isPresent()) {
             return dapp.get();
         }
         return null;
-
     }
 
     //////////////////////////////////////////////
     // for management side
     //////////////////////////////////////////////
-    @RequestMapping(value = "/dapps/upload")
+    @PostMapping("/dapps/external")
+    public DApp addExternalDapp(@RequestParam(value = "name") String name,
+                                  @RequestParam(value = "tagline") String tagline,
+                                  @RequestParam(value = "fullDescription") String fullDescription,
+                                  @RequestParam(value = "author") String author,
+                                  @RequestParam(value = "websiteUrl") String websiteUrl,
+                                  @RequestParam(value = "contactEmail") String contactEmail,
+                                  @RequestParam(value = "logoUrl") String logoUrl,
+                                  @RequestParam(value = "advertiseImageUrl") String advertiseImageUrl,
+                                  @RequestParam(value = "platform") Platform platform,
+                                  @RequestParam(value = "category") Category category,
+                                  @RequestParam(value = "launchUrl") String launchUrl) {
+        DApp dapp = new DApp();
+        dapp.setType(DAppType.EXTERNAL);
+        dapp.setName(name);
+        dapp.setTagline(tagline);
+        dapp.setFullDescription(fullDescription);
+        dapp.setAuthor(author);
+        dapp.setWebsiteUrl(websiteUrl);
+        dapp.setContactEmail(contactEmail);
+        dapp.setLogoUrl(logoUrl);
+        dapp.setAdvertiseImageUrl(advertiseImageUrl);
+        dapp.setPlatform(platform);
+        dapp.setCategory(category);
+        dapp.setLaunchUrl(launchUrl);
+
+        processor.validate(dapp);
+        repo.save(dapp);
+        return dapp;
+    }
+
+    @PostMapping("/dapps/mobile")
+    public DApp addMobileDapp(@RequestParam(value = "name") String name,
+                              @RequestParam(value = "tagline") String tagline,
+                              @RequestParam(value = "fullDescription") String fullDescription,
+                              @RequestParam(value = "author") String author,
+                              @RequestParam(value = "websiteUrl") String websiteUrl,
+                              @RequestParam(value = "contactEmail") String contactEmail,
+                              @RequestParam(value = "logoUrl") String logoUrl,
+                              @RequestParam(value = "advertiseImageUrl") String advertiseImageUrl,
+                              @RequestParam(value = "platform") Platform platform,
+                              @RequestParam(value = "category") Category category,
+                              @RequestParam(value = "androidLink") String androidLink,
+                              @RequestParam(value = "iOSLink") String iOSLink) {
+        DApp dapp = new DApp();
+        dapp.setType(DAppType.APP);
+        dapp.setName(name);
+        dapp.setTagline(tagline);
+        dapp.setFullDescription(fullDescription);
+        dapp.setAuthor(author);
+        dapp.setWebsiteUrl(websiteUrl);
+        dapp.setContactEmail(contactEmail);
+        dapp.setLogoUrl(logoUrl);
+        dapp.setAdvertiseImageUrl(advertiseImageUrl);
+        dapp.setPlatform(platform);
+        dapp.setCategory(category);
+        dapp.setAndroidLink(androidLink);
+        dapp.setiOSLink(iOSLink);
+
+        processor.validate(dapp);
+        repo.save(dapp);
+        return dapp;
+
+    }
+
+    @PostMapping("/dapps/internal")
     @ResponseBody
-    public String upload(@RequestParam(value = "DAppPkg") MultipartFile file) {
+    public DApp addInternalDapp(@RequestParam(value = "DAppPkg") MultipartFile file) {
         // check if package size is larger than 10M
         logger.info("uploading dapp pkg...");
 
@@ -118,6 +182,9 @@ public class DAppsController {
             throw new CodedException(CodedErrorEnum.PKG_STORE_ERROR, e.getMessage());
         }
 
+        // verify signature
+        processor.verifySignature(savedPath.toFile());
+
         // decompress zip file
         ZipFile zipFile = null;
         String destination;
@@ -134,10 +201,11 @@ public class DAppsController {
 
         try {
             logger.info("verify dapp package");
-            DApp dapp = pkgProcessor.process(new File(destination));
+            DApp dapp = processor.process(new File(destination));
             dapp.setPackUrl(savedPath.toFile().getName());
+            dapp.setType(DAppType.APP);
 
-            return savedPath.toFile().getName();
+            return dapp;
         } catch (VerifyException e) {
             deleteFile(Paths.get(destination));
             deleteFile(savedPath);

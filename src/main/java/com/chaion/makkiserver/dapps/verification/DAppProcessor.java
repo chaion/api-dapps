@@ -3,9 +3,10 @@ package com.chaion.makkiserver.dapps.verification;
 import com.chaion.makkiserver.Utils;
 import com.chaion.makkiserver.dapps.Category;
 import com.chaion.makkiserver.dapps.DApp;
-import com.chaion.makkiserver.dapps.DAppRepository;
+import com.chaion.makkiserver.dapps.DAppType;
 import com.chaion.makkiserver.dapps.Platform;
 import com.chaion.makkiserver.exception.CodedErrorEnum;
+import com.chaion.makkiserver.exception.CodedException;
 import com.chaion.makkiserver.file.StorageException;
 import com.chaion.makkiserver.file.StorageService;
 import com.google.gson.JsonElement;
@@ -18,17 +19,86 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 @Service
-public class DAppPkgProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(DAppPkgProcessor.class);
+public class DAppProcessor {
+    private static final Logger logger = LoggerFactory.getLogger(DAppProcessor.class);
 
     @Autowired
     StorageService storageService;
+
+    public void verifySignature(File zipFile) {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command("jarsigner", "-verify", zipFile.getAbsolutePath());
+        Process process = null;
+        try {
+            process = processBuilder.start();
+            StringBuilder output = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                output.append(line + "\n");
+            }
+            int exitVal = process.waitFor();
+            if (exitVal == 0) {
+                if (output.toString().contains("jar is unsigned"))
+                    throw new CodedException(CodedErrorEnum.PKG_SIGNATURE_INVALID);
+            } else {
+                throw new CodedException(CodedErrorEnum.PKG_SIGNATURE_INVALID);
+            }
+        } catch (IOException e) {
+            throw new CodedException(CodedErrorEnum.PKG_SIGNATURE_INVALID);
+        } catch (InterruptedException e) {
+            throw new CodedException(CodedErrorEnum.PKG_SIGNATURE_INVALID);
+        }
+    }
+
+    public void validate(DApp dapp) {
+        if (dapp.getName() == null)
+            throw new VerifyException(CodedErrorEnum.DAPP_NAME_MISSING);
+        if (dapp.getName().length() > DApp.NAME_MAX_LENGTH)
+            throw new VerifyException(CodedErrorEnum.DAPP_NAME_LENGTH_INVALID);
+        if (dapp.getTagline() != null && dapp.getTagline().length() > DApp.TAGLINE_MAX_LENGTH)
+            throw new VerifyException(CodedErrorEnum.DAPP_TAGLINE_LENGTH_INVALID);
+        if (dapp.getFullDescription() == null)
+            throw new VerifyException(CodedErrorEnum.DAPP_FULL_DESCRIPTION_MISSING);
+        if (dapp.getFullDescription().length() > DApp.FULL_DESCRIPTION_MAX_LENGTH)
+            throw new VerifyException(CodedErrorEnum.DAPP_FULL_DESCRIPTION_LENGTH_INVALID);
+        if (dapp.getAuthor() == null)
+            throw new VerifyException(CodedErrorEnum.DAPP_AUTHOR_MISSING);
+        if (dapp.getWebsiteUrl() != null) {
+            if (!UrlValidator.getInstance().isValid(dapp.getWebsiteUrl()))
+                throw new VerifyException(CodedErrorEnum.DAPP_WEBSITE_URL_INVALID);
+        }
+        if (dapp.getContactEmail() != null) {
+            if (!EmailValidator.getInstance().isValid(dapp.getContactEmail()))
+                throw new VerifyException(CodedErrorEnum.DAPP_EMAIL_INVALID);
+        }
+        if (dapp.getPlatform() == null)
+            throw new VerifyException(CodedErrorEnum.DAPP_PLATFORM_MISSING);
+        if (dapp.getCategory() == null)
+            throw new VerifyException(CodedErrorEnum.DAPP_CATEGORY_MISSING);
+
+        if (dapp.getType() == DAppType.EXTERNAL) {
+            if (dapp.getLaunchUrl() == null)
+                throw new VerifyException(CodedErrorEnum.DAPP_LAUNCH_URL_MISSING);
+            if (!UrlValidator.getInstance().isValid(dapp.getLaunchUrl()))
+                throw new VerifyException(CodedErrorEnum.DAPP_LAUNCH_URL_INVALID);
+        } else if (dapp.getType() == DAppType.APP) {
+            if (dapp.getAndroidLink() == null && dapp.getiOSLink() == null) {
+                throw new VerifyException(CodedErrorEnum.DAPP_ANDROID_IOS_LINK_MISSING);
+            }
+            if (dapp.getAndroidLink() != null) {
+                if (!UrlValidator.getInstance().isValid(dapp.getAndroidLink()))
+                    throw new VerifyException(CodedErrorEnum.DAPP_ANDROID_LINK_INVALID);
+            }
+            if (dapp.getiOSLink() != null) {
+                if (!UrlValidator.getInstance().isValid(dapp.getiOSLink()))
+                    throw new VerifyException(CodedErrorEnum.DAPP_IOS_LINK_INVALID);
+            }
+        }
+    }
 
     public DApp process(File pkgFile) throws VerifyException, StorageException {
         // verify pkg structure
@@ -38,9 +108,6 @@ public class DAppPkgProcessor {
         if (!indexHtml.exists() || !manifest.exists() || !signature.exists()) {
             throw new VerifyException(CodedErrorEnum.PKG_INVALID_STRUCTURE);
         }
-
-        // verify signature
-        // TODO:
 
         // verify manifest fields
         return processManifestFile(pkgFile, manifest);
@@ -61,11 +128,11 @@ public class DAppPkgProcessor {
         JsonObject rootJo = root.getAsJsonObject();
 
         // name
-        if (!rootJo.has("name")) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_NAME_MISSING);
+        if (!rootJo.has("name")) throw new VerifyException(CodedErrorEnum.DAPP_NAME_MISSING);
         JsonElement je = rootJo.get("name");
         if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         String name = je.getAsString();
-        if (name.length() > DApp.NAME_MAX_LENGTH) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_NAME_LENGTH_INVALID);
+        if (name.length() > DApp.NAME_MAX_LENGTH) throw new VerifyException(CodedErrorEnum.DAPP_NAME_LENGTH_INVALID);
         dapp.setName(name);
 
         // tagline
@@ -74,27 +141,27 @@ public class DAppPkgProcessor {
             if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
             String tagline = je.getAsString();
             if (tagline.length() > DApp.TAGLINE_MAX_LENGTH)
-                throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_TAGLINE_LENGTH_INVALID);
+                throw new VerifyException(CodedErrorEnum.DAPP_TAGLINE_LENGTH_INVALID);
             dapp.setTagline(tagline);
         }
 
         // full description
-        if (!rootJo.has("full_description")) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_FULL_DESCRIPTION_MISSING);
+        if (!rootJo.has("full_description")) throw new VerifyException(CodedErrorEnum.DAPP_FULL_DESCRIPTION_MISSING);
         je = rootJo.get("full_description");
         if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         String fullDesc = je.getAsString();
-        if (fullDesc.length() > DApp.FULL_DESCRIPTION_MAX_LENGTH) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_FULL_DESCRIPTION_LENGTH_INVALID);
+        if (fullDesc.length() > DApp.FULL_DESCRIPTION_MAX_LENGTH) throw new VerifyException(CodedErrorEnum.DAPP_FULL_DESCRIPTION_LENGTH_INVALID);
         dapp.setFullDescription(fullDesc);
 
         // authors
-        if (!rootJo.has("authors")) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_AUTHOR_MISSING);
+        if (!rootJo.has("authors")) throw new VerifyException(CodedErrorEnum.DAPP_AUTHOR_MISSING);
         je = rootJo.get("authors");
         if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         String authors = je.getAsString();
         dapp.setAuthor(authors);
 
         // category
-        if (!rootJo.has("category")) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_CATEGORY_MISSING);
+        if (!rootJo.has("category")) throw new VerifyException(CodedErrorEnum.DAPP_CATEGORY_MISSING);
         je = rootJo.get("category");
         if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         Category category = null;
@@ -111,7 +178,7 @@ public class DAppPkgProcessor {
             if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
             String website_url = je.getAsString();
             if (!UrlValidator.getInstance().isValid(website_url)) {
-                throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_WEBSITE_URL_INVALID);
+                throw new VerifyException(CodedErrorEnum.DAPP_WEBSITE_URL_INVALID);
             }
             dapp.setWebsiteUrl(website_url);
         }
@@ -122,7 +189,7 @@ public class DAppPkgProcessor {
             if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
             String contactEmail = je.getAsString();
             if (!EmailValidator.getInstance().isValid(contactEmail)) {
-                throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_EMAIL_INVALID);
+                throw new VerifyException(CodedErrorEnum.DAPP_EMAIL_INVALID);
             }
             dapp.setContactEmail(contactEmail);
         }
@@ -168,7 +235,7 @@ public class DAppPkgProcessor {
 
         // version
         // platform
-        if (!rootJo.has("platform")) throw new VerifyException(CodedErrorEnum.PKG_MANIFEST_PLATFORM_MISSING);
+        if (!rootJo.has("platform")) throw new VerifyException(CodedErrorEnum.DAPP_PLATFORM_MISSING);
         je = rootJo.get("platform");
         if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         Platform platform = null;

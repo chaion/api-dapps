@@ -21,13 +21,16 @@ public class DApp {
     private String advertiseImageUrl;
     private Platform platform;
     private Category category;
+    private DAppType type;
     // type=embed
     private String packUrl;
     private String version;
     private String updates;
     // type=external
     private String launchUrl;
-    private DAppType type;
+    // type=app
+    private String androidLink;
+    private String iOSLink;
 
     public String getId() {
         return id;
@@ -155,5 +158,21 @@ public class DApp {
 
     public void setPackUrl(String packUrl) {
         this.packUrl = packUrl;
+    }
+
+    public String getAndroidLink() {
+        return androidLink;
+    }
+
+    public void setAndroidLink(String androidLink) {
+        this.androidLink = androidLink;
+    }
+
+    public String getiOSLink() {
+        return iOSLink;
+    }
+
+    public void setiOSLink(String iOSLink) {
+        this.iOSLink = iOSLink;
     }
 }
