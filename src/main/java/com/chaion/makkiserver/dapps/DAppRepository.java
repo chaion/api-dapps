@@ -14,4 +14,7 @@ public interface DAppRepository extends MongoRepository<DApp, String> {
 
     @Query("{'$or': [ {'name': {$regex: '?0'}}, {'fullDescription': {$regex: '?0'}}, {'tagline': {$regex: '?0'}}]}")
     List<DApp> findByKeyword(String keyword, Pageable pageable);
+
+    @Query(value="{'dappId': ?0}", fields="{dappId: 1, version: 1, name: 1}")
+    List<DApp> findByDappId(String dappId);
 }

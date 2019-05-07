@@ -1,10 +1,7 @@
-package com.chaion.makkiserver.dapps.verification;
+package com.chaion.makkiserver.dapps.processor;
 
 import com.chaion.makkiserver.Utils;
-import com.chaion.makkiserver.dapps.Category;
-import com.chaion.makkiserver.dapps.DApp;
-import com.chaion.makkiserver.dapps.DAppType;
-import com.chaion.makkiserver.dapps.Platform;
+import com.chaion.makkiserver.dapps.*;
 import com.chaion.makkiserver.exception.CodedErrorEnum;
 import com.chaion.makkiserver.exception.CodedException;
 import com.chaion.makkiserver.file.StorageException;
@@ -20,10 +17,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class DAppProcessor {
     private static final Logger logger = LoggerFactory.getLogger(DAppProcessor.class);
+
+    @Autowired
+    DAppRepository repo;
 
     @Autowired
     StorageService storageService;
@@ -104,13 +106,13 @@ public class DAppProcessor {
         // verify pkg structure
         File indexHtml = new File(pkgFile, "index.html");
         File manifest = new File(pkgFile, "META-INF/manifest.json");
-        File signature = new File(pkgFile, "META-INF/signature.json");
-        if (!indexHtml.exists() || !manifest.exists() || !signature.exists()) {
+        if (!indexHtml.exists() || !manifest.exists()) {
             throw new VerifyException(CodedErrorEnum.PKG_INVALID_STRUCTURE);
         }
 
         // verify manifest fields
-        return processManifestFile(pkgFile, manifest);
+        DApp dapp = processManifestFile(pkgFile, manifest);
+        return dapp;
     }
 
     private DApp processManifestFile(File rootFile, File file) throws StorageException {
@@ -126,6 +128,17 @@ public class DAppProcessor {
 
         if (!root.isJsonObject()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
         JsonObject rootJo = root.getAsJsonObject();
+
+        // dappId
+        if (rootJo.has("dappId")) {
+            JsonElement je = rootJo.get("dappId");
+            if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
+            String dappId = je.getAsString();
+            logger.info("processing dapp id: " + dappId);
+            dapp.setDappId(dappId);
+        } else {
+            dapp.setDappId(UUID.randomUUID().toString());
+        }
 
         // name
         if (!rootJo.has("name")) throw new VerifyException(CodedErrorEnum.DAPP_NAME_MISSING);
@@ -234,6 +247,18 @@ public class DAppProcessor {
         dapp.setAdvertiseImageUrl(storageService.store(advertiseImageFile).toFile().getName());
 
         // version
+        if (!rootJo.has("version")) throw new VerifyException(CodedErrorEnum.DAPP_VERSION_MISSING);
+        je = rootJo.get("version");
+        if (!je.isJsonPrimitive()) throw new VerifyException(CodedErrorEnum.PKG_INVALID_MANIFEST);
+        String version = je.getAsString();
+        List<DApp> dappList = repo.findByDappId(dapp.getDappId());
+        if (dappList != null && dappList.size() > 0) {
+            for (DApp app : dappList) {
+                if (version.compareTo(app.getVersion()) <= 0)
+                    throw new VerifyException(CodedErrorEnum.DAPP_VERSION_INVALID);
+            }
+        }
+
         // platform
         if (!rootJo.has("platform")) throw new VerifyException(CodedErrorEnum.DAPP_PLATFORM_MISSING);
         je = rootJo.get("platform");

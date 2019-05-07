@@ -1,7 +1,7 @@
 package com.chaion.makkiserver.dapps;
 
-import com.chaion.makkiserver.dapps.verification.DAppProcessor;
-import com.chaion.makkiserver.dapps.verification.VerifyException;
+import com.chaion.makkiserver.dapps.processor.DAppProcessor;
+import com.chaion.makkiserver.dapps.processor.VerifyException;
 import com.chaion.makkiserver.exception.CodedErrorEnum;
 import com.chaion.makkiserver.exception.CodedException;
 import com.chaion.makkiserver.file.StorageException;
@@ -53,6 +53,11 @@ public class DAppsController {
                                @RequestParam(value = "offset") int offset,
                                @RequestParam(value = "limit") int limit) {
         return repo.findByKeyword(keyword, PageRequest.of(offset, limit));
+    }
+
+    @GetMapping("/dappsCategories")
+    public Category[] getCategories() {
+        return Category.values();
     }
 
     @GetMapping("/dappsByCategory")
@@ -203,27 +208,28 @@ public class DAppsController {
             logger.info("verify dapp package");
             DApp dapp = processor.process(new File(destination));
             dapp.setPackUrl(savedPath.toFile().getName());
-            dapp.setType(DAppType.APP);
+            dapp.setType(DAppType.EMBED);
 
+            repo.save(dapp);
             return dapp;
         } catch (VerifyException e) {
-            deleteFile(Paths.get(destination));
             deleteFile(savedPath);
 
             logger.error("process package failed:", e.getMessage());
             throw e;
         } catch (StorageException e) {
-            deleteFile(Paths.get(destination));
             deleteFile(savedPath);
 
             logger.error("process package failed:", e.getMessage());
             throw new CodedException(CodedErrorEnum.PKG_STORE_ERROR, e.getMessage());
         } catch (Exception e) {
-            deleteFile(Paths.get(destination));
             deleteFile(savedPath);
 
             logger.error("process package failed:", e.getMessage());
             throw e;
+        } finally {
+            // always delete unzipped file
+            deleteFile(Paths.get(destination));
         }
     }
 

@@ -11,6 +11,7 @@ public class DApp {
     public static final int ADVERTISE_IMAGE_HEIGHT = 128;
 
     private String id;
+    private String dappId;
     private String name;
     private String tagline;
     private String fullDescription;
@@ -26,11 +27,20 @@ public class DApp {
     private String packUrl;
     private String version;
     private String updates;
+    private String pk;
     // type=external
     private String launchUrl;
     // type=app
     private String androidLink;
     private String iOSLink;
+
+    public String getDappId() {
+        return dappId;
+    }
+
+    public void setDappId(String dappId) {
+        this.dappId = dappId;
+    }
 
     public String getId() {
         return id;
@@ -174,5 +184,13 @@ public class DApp {
 
     public void setiOSLink(String iOSLink) {
         this.iOSLink = iOSLink;
+    }
+
+    public String getPk() {
+        return pk;
+    }
+
+    public void setPk(String pk) {
+        this.pk = pk;
     }
 }

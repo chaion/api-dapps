@@ -1,4 +1,4 @@
-package com.chaion.makkiserver.dapps.verification;
+package com.chaion.makkiserver.dapps.processor;
 
 import com.chaion.makkiserver.exception.CodedErrorEnum;
 import com.chaion.makkiserver.exception.CodedException;

@@ -33,7 +33,9 @@ public enum CodedErrorEnum {
     DAPP_ANDROID_IOS_LINK_MISSING(134, "android/iOS links are missing."),
     DAPP_ANDROID_LINK_INVALID(135, "android link is invalid."),
     DAPP_IOS_LINK_INVALID(136, "ios link is invalid"),
-    PKG_SIGNATURE_INVALID(137, "package signature is invalid.");
+    PKG_SIGNATURE_INVALID(137, "package signature is invalid."),
+    DAPP_VERSION_MISSING(138, "version is missing."),
+    DAPP_VERSION_INVALID(139, "version must be newer than previous versions.");
 
 
     private int code;
