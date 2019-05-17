@@ -9,8 +9,8 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.chaion</groupId>
-	<artifactId>makkiserver</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>makkiiserver</artifactId>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>makkiserver</name>
 	<description>Demo project for Spring Boot</description>
 

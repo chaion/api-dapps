@@ -21,6 +21,11 @@ public class ExchangePool {
 
     public ExchangePool() {
         cryptoList.add("AION");
+        cryptoList.add("BTC");
+        cryptoList.add("ETH");
+        cryptoList.add("EOS");
+        cryptoList.add("LTC");
+        cryptoList.add("TRX");
 
         fiatList.add("BTC");
         fiatList.add("USD");
