@@ -76,7 +76,7 @@ public class FileSystemStorageService implements StorageService {
                 Files.delete(path);
             }
         } catch (IOException e) {
-            throw new StorageException("Faield to delete file " + path.getFileName());
+            throw new StorageException("Failed to delete file " + path.getFileName());
         }
     }
 

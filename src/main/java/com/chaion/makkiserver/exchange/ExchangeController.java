@@ -1,5 +1,6 @@
 package com.chaion.makkiserver.exchange;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,5 +28,26 @@ public class ExchangeController {
         } else {
             return "{\"error\": \"no price found\"}";
         }
+    }
+
+    @RequestMapping(value="/prices", method=RequestMethod.GET)
+    public String getPrices(@RequestParam(value = "cryptos") String cryptoCurrencies,
+                            @RequestParam(value = "fiat") String fiat) {
+        JsonArray array = new JsonArray();
+
+        String[] cryptos = cryptoCurrencies.split(",");
+        for (String crypto: cryptos) {
+            BigDecimal price = pool.getPrice(crypto, fiat);
+            if (price != null) {
+                JsonObject data = new JsonObject();
+                data.addProperty("crypto", crypto);
+                data.addProperty("fiat", fiat);
+                data.addProperty("price", price);
+                array.add(data);
+            } else {
+                return "{\"error\": \"no price found\"}";
+            }
+        }
+        return array.toString();
     }
 }

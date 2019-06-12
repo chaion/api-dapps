@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.chaion</groupId>
 	<artifactId>makkiiserver</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>makkiserver</name>
 	<description>Demo project for Spring Boot</description>
 
@@ -51,6 +51,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.12.1</version>
 		</dependency>
 	</dependencies>
 
