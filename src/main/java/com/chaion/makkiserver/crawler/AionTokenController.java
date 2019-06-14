@@ -24,7 +24,11 @@ public class AionTokenController {
 
     @GetMapping("/token/aion/search")
     public List<ATSToken> search(@RequestParam(value="keyword") String keyword) {
-        if (keyword.matches("^0x[0-9a-fA-F]{64}")) {
+        if (keyword.matches("^(0x)?[0-9a-fA-F]{64}$")) {
+            keyword = keyword.toLowerCase();
+            if (keyword.startsWith("0x") || keyword.startsWith("0X")) {
+                keyword = keyword.substring(2);
+            }
             return repo.findByContractAddress(keyword);
         }
         return repo.findByName(keyword);

@@ -41,12 +41,28 @@ public class AionTokenCrawler {
 
                 JsonObject tokenJson = array.get(i).getAsJsonObject();
                 token.setSymbol(tokenJson.get("symbol").getAsString());
-                token.setContractAddr(tokenJson.get("contractAddr").getAsString());
+
+                String contractAddr = tokenJson.get("contractAddr").getAsString();
+                if (!contractAddr.startsWith("0x") && !contractAddr.startsWith("0X")) {
+                    contractAddr = "0x" + contractAddr.toLowerCase();
+                }
+                token.setContractAddr(contractAddr);
+
                 token.setTotalSupply(tokenJson.get("totalSupply").getAsString());
                 token.setTokenDecimal(tokenJson.get("tokenDecimal").getAsString());
                 token.setLiquidSupply(tokenJson.get("liquidSupply").getAsString());
-                token.setCreatorAddress(tokenJson.get("creatorAddress").getAsString());
-                token.setTransactionHash(tokenJson.get("transactionHash").getAsString());
+
+                String creatorAddress = tokenJson.get("creatorAddress").getAsString();
+                if (!creatorAddress.startsWith("0x") && !creatorAddress.startsWith("0X")) {
+                    creatorAddress = "0x" + creatorAddress.toLowerCase();
+                }
+                token.setCreatorAddress(creatorAddress);
+
+                String transactionHash = tokenJson.get("transactionHash").getAsString();
+                if (!transactionHash.startsWith("0x") && !transactionHash.startsWith("0X")) {
+                    transactionHash = "0x" + transactionHash.toLowerCase();
+                }
+                token.setTransactionHash(transactionHash);
                 token.setGranularity(tokenJson.get("granularity").getAsString());
                 token.setCreationTimestamp(tokenJson.get("creationTimestamp").getAsString());
                 token.setName(tokenJson.get("name").getAsString());
