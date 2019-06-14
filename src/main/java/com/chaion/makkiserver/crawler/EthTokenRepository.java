@@ -1,4 +1,4 @@
-package com.chaion.makkiserver.ethcrawler;
+package com.chaion.makkiserver.crawler;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

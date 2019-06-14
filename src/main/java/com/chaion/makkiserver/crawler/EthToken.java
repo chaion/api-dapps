@@ -1,4 +1,4 @@
-package com.chaion.makkiserver.ethcrawler;
+package com.chaion.makkiserver.crawler;
 
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -85,5 +85,20 @@ public class EthToken {
 
     public void setContractType(String contractType) {
         this.contractType = contractType;
+    }
+
+    @Override
+    public String toString() {
+        return "EthToken{" +
+                "\nimagePath='" + imagePath + '\'' +
+                ", \nname='" + name + '\'' +
+                ", \nsymbol='" + symbol + '\'' +
+                ", \ndesc='" + desc + '\'' +
+                ", \ncontractAddr='" + contractAddr + '\'' +
+                ", \ntokenDecimal='" + tokenDecimal + '\'' +
+                ", \nofficialSite='" + officialSite + '\'' +
+                ", \ntotalSupply='" + totalSupply + '\'' +
+                ", \ncontractType='" + contractType + '\'' +
+                "\n}";
     }
 }

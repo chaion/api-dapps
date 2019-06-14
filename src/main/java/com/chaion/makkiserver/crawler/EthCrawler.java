@@ -1,4 +1,4 @@
-package com.chaion.makkiserver.ethcrawler;
+package com.chaion.makkiserver.crawler;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
