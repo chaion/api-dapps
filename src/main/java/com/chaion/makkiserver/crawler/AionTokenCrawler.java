@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -14,6 +15,8 @@ import org.springframework.web.client.RestTemplate;
 public class AionTokenCrawler {
     private static final Logger logger = LoggerFactory.getLogger(AionTokenCrawler.class);
 
+    @Value("${app_env}")
+    String appEnv;
     @Autowired
     RestTemplate rest;
     @Autowired
@@ -25,7 +28,12 @@ public class AionTokenCrawler {
         int count = 0;
         while (page < totalPages) {
             int size = 25;
-            String url = "https://mastery-api.aion.network/aion/dashboard/getTokenList?page=" + page + "&size=" + size;
+            String url;
+            if (appEnv.equalsIgnoreCase("prod")) {
+                url = "https://mainnet-api.aion.network/aion/dashboard/getTokenList?page=" + page + "&size=" + size;
+            } else {
+                url = "https://mastery-api.aion.network/aion/dashboard/getTokenList?page=" + page + "&size=" + size;
+            }
             ResponseEntity<String> resp = rest.getForEntity(url, String.class);
             String body = resp.getBody();
             JsonObject root = new JsonParser().parse(body).getAsJsonObject();
