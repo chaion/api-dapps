@@ -2,9 +2,13 @@ package com.chaion.makkiiserver.controller;
 
 import com.chaion.makkiiserver.model.EventLog;
 import com.chaion.makkiiserver.repository.EventLogRepository;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+@Api(value="Event Log APIs",
+        description = "event log records user app behaviors, such as login, register, transfer, etc, etc.")
 @RestController
 @RequestMapping("eventlog")
 public class EventLogController {
@@ -12,11 +16,12 @@ public class EventLogController {
     @Autowired
     EventLogRepository eventlogRepo;
 
+    @ApiOperation(value="Add an event log")
     @PutMapping
-    public void addEventLog(@RequestBody EventLog eventLog) {
+    public EventLog addEventLog(@RequestBody EventLog eventLog) {
         if (eventLog.getCreated() == null) {
             eventLog.setCreated(System.currentTimeMillis());
         }
-        eventlogRepo.insert(eventLog);
+        return eventlogRepo.insert(eventLog);
     }
 }

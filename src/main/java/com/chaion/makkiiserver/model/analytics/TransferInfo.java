@@ -1,13 +1,25 @@
 package com.chaion.makkiiserver.model.analytics;
 
-import java.util.Map;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
+import java.util.List;
+
+@ApiModel(description = "Transfer statistics model")
 public class TransferInfo {
+
+    @ApiModelProperty(value="total number of transactions within the given period",
+        example = "3")
     private long totalCount;
+
+    @ApiModelProperty(value="when does transfer statistic starts from", example = "1562142132139")
     private long startTime;
+
+    @ApiModelProperty(value="when does transfer statistic ends at", example = "1562147658022")
     private long endTime;
-    private Map<String, Long> transferCountMap;
-    private Map<String, Double> transferAmountMap;
+
+    @ApiModelProperty(value="transfer statistic of each coin/token")
+    private List<CoinTransferInfo> coinTransferList;
 
     public long getTotalCount() {
         return totalCount;
@@ -32,19 +44,11 @@ public class TransferInfo {
         this.endTime = endTime;
     }
 
-    public Map<String, Long> getTransferCountMap() {
-        return transferCountMap;
+    public List<CoinTransferInfo> getCoinTransferList() {
+        return coinTransferList;
     }
 
-    public void setTransferCountMap(Map<String, Long> transferCountMap) {
-        this.transferCountMap = transferCountMap;
-    }
-
-    public Map<String, Double> getTransferAmountMap() {
-        return transferAmountMap;
-    }
-
-    public void setTransferAmountMap(Map<String, Double> transferAmountMap) {
-        this.transferAmountMap = transferAmountMap;
+    public void setCoinTransferList(List<CoinTransferInfo> coinTransferList) {
+        this.coinTransferList = coinTransferList;
     }
 }

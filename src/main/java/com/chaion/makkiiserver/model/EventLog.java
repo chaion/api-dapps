@@ -1,18 +1,23 @@
 package com.chaion.makkiiserver.model;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.Id;
 
 import java.util.Map;
 
-@ApiModel(description="Event logs: login/transfer/...")
+@ApiModel(description="Event logs: login/register/recovery/transfer/...")
 public class EventLog {
 
     // predefined event types
     public static final String EVENT_REGISTER = "REGISTER";
-    public static final String EVENT_PARAM_PLATFORM = "platform";
+    public static final String EVENT_RECOVERY = "RECOVERY";
     public static final String EVENT_LOGIN = "LOGIN";
     public static final String EVENT_TRANSFER = "TRANSFER";
+    // predefined event data parameters
+    public static final String EVENT_PARAM_PLATFORM = "platform";
+    public static final String EVENT_PARAM_VERSION = "version";
+    public static final String EVENT_PARAM_VERSION_CODE = "version_code";
     public static final String EVENT_PARAM_COIN = "coin";
     public static final String EVENT_PARAM_TOKEN = "token";
     public static final String EVENT_PARAM_AMOUNT = "amount";
@@ -20,14 +25,23 @@ public class EventLog {
     @Id
     private String id;
 
+    @ApiModelProperty(value="user identifier",
+            notes = "there is no user name or email in app, app sends phone unique identifier as user id.",
+            allowEmptyValue = true, example="sdm660")
     private String user;
 
+    @ApiModelProperty(value="event type", example="TRANSFER")
     private String event;
 
+    @ApiModelProperty(value="data binded to event",
+            notes = "use key/value to pass event related data",
+            example = "{ \"coin\" : \"AION\", \"token\" : \"MAK\", \"amount\" : \"20\" }")
     private Map<String, String> data;
 
+    @ApiModelProperty(value="reserved field. May be used in the future, for example page duration")
     private Long duration;
 
+    @ApiModelProperty(value="event happen time", example = "1562142522014")
     private Long created;
 
     public String getId() {

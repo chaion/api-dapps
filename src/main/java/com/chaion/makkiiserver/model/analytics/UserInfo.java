@@ -1,11 +1,23 @@
 package com.chaion.makkiiserver.model.analytics;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.util.Map;
 
+@ApiModel(description = "User statistic model")
 public class UserInfo {
+
+    @ApiModelProperty(value="when does user statistic starts from", example = "1562142132139")
     private long startTime;
+
+    @ApiModelProperty(value="when does user statistic ends at", example = "1562147658022")
     private long endTime;
+
+    @ApiModelProperty(value="registered user count for each platform", example = "{\"ANDROID\": 2, \"IOS\": 0}")
     private Map<String, Long> userCountsByPlatform;
+
+    @ApiModelProperty(value="total number of users that are registered within the given period", example = "2")
     private long total;
 
     public Map<String, Long> getUserCountsByPlatform() {
