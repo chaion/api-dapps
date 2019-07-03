@@ -5,6 +5,7 @@ import com.chaion.makkiiserver.services.exchange.ExchangePool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -21,7 +22,7 @@ public class ScheduledTasks {
     @Autowired
     private ExchangePool pool;
 
-//    @Scheduled(fixedRate = 30 * 60 * 1000)
+    @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchCurrencyRate() {
         logger.info("fetch currency rate");
 
