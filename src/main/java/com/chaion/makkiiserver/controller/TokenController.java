@@ -120,9 +120,9 @@ public class TokenController {
 
                 String contractAddr = tokenJson.get("contractAddr").getAsString();
                 if (!contractAddr.startsWith("0x") && !contractAddr.startsWith("0X")) {
-                    contractAddr = "0x" + contractAddr.toLowerCase();
+                    contractAddr = "0x" + contractAddr;
                 }
-                token.setContractAddr(contractAddr);
+                token.setContractAddr(contractAddr.toLowerCase());
 
                 token.setTotalSupply(tokenJson.get("totalSupply").getAsString());
                 token.setTokenDecimal(tokenJson.get("tokenDecimal").getAsString());
