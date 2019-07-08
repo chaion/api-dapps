@@ -11,6 +11,6 @@ import java.util.List;
 public interface AppVersionRepository extends MongoRepository<AppVersion, String> {
     AppVersion findFirstByPlatformIgnoreCaseOrderByVersionCodeDesc(String platform);
 
-    @Query("{'platform': ?0, 'mandatory': ?1, 'versionCode': { $gt: ?2}}")
+    @Query("{'platform': {$regex: '?0', $options: 'i'}, 'mandatory': ?1, 'versionCode': { $gt: ?2}}")
     List<AppVersion> findMandatoryVersions(String platform, boolean isMandatory, int versionCode);
 }
