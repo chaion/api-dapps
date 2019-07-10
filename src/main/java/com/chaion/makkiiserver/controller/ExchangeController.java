@@ -5,6 +5,8 @@ import com.chaion.makkiiserver.services.exchange.ExchangePool;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,8 @@ import java.util.List;
 @RestController
 public class ExchangeController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExchangeController.class);
+
     @Autowired
     private ExchangePool pool;
 
@@ -28,6 +32,7 @@ public class ExchangeController {
             @RequestParam(value = "crypto") String crypto,
             @ApiParam(value="fiat currency symbol")
             @RequestParam(value = "fiat") String fiat) {
+        logger.info("/market/price: crypto: " + crypto + ", fiat: " + fiat);
         return getPriceInternal(crypto, fiat);
     }
 
@@ -38,6 +43,7 @@ public class ExchangeController {
             @RequestParam(value = "crypto") String crypto,
             @ApiParam(value="fiat currency symbol")
             @RequestParam(value = "fiat") String fiat) {
+        logger.info("/price: crypto: " + crypto + ", fiat: " + fiat);
         return getPriceInternal(crypto, fiat);
     }
 
@@ -61,6 +67,7 @@ public class ExchangeController {
             @RequestParam(value = "cryptos") String cryptoCurrencies,
             @ApiParam(value="fiat currency symbol")
             @RequestParam(value = "fiat") String fiat) {
+        logger.info("/market/prices: cryptoCurrencies: " + cryptoCurrencies + ", fiat: " + fiat);
         List<MarketPrice> list = new ArrayList<>();
         String[] cryptos = cryptoCurrencies.split(",");
         for (String crypto: cryptos) {
