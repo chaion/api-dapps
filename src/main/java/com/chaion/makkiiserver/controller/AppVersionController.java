@@ -68,7 +68,8 @@ public class AppVersionController {
             @ApiParam(value = "in which language update message is", allowableValues = "en, zh", defaultValue = "en")
             @RequestParam(value = "lang", required = false, defaultValue = "en")
                     String lang) {
-        AppVersion appVersion = repo.findFirstByPlatformOrderByVersionCodeDesc(platform);
+        logger.info("appVersion/latest: currentVersionCode: " + currentVersionCode + ", platform: " + platform + ", lang: " + lang);
+        AppVersion appVersion = repo.findFirstByPlatformIgnoreCaseOrderByVersionCodeDesc(platform);
         if (appVersion == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Version for platform(" + platform + ") doesn't exist.");
         }

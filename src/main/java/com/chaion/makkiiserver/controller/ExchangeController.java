@@ -5,6 +5,8 @@ import com.chaion.makkiiserver.services.exchange.ExchangePool;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,19 +18,36 @@ import java.util.List;
 
 @Api(value="Exchange Market APIs", description="crypto currency, fiat currency exchange rates")
 @RestController
-@RequestMapping("market")
 public class ExchangeController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExchangeController.class);
 
     @Autowired
     private ExchangePool pool;
 
     @ApiOperation(value="Get exchange rate: crypto currency->fiat currency")
-    @GetMapping(value="/price")
+    @GetMapping(value="/market/price")
     public MarketPrice getPrice(
             @ApiParam(value="crypto currency symbol")
             @RequestParam(value = "crypto") String crypto,
             @ApiParam(value="fiat currency symbol")
             @RequestParam(value = "fiat") String fiat) {
+        logger.info("/market/price: crypto: " + crypto + ", fiat: " + fiat);
+        return getPriceInternal(crypto, fiat);
+    }
+
+    @ApiOperation(value="refer to /market/price",
+            notes = "same with /market/price api, legacy api to be compatible with app version 0.0.1")
+    @GetMapping(value="/price")
+    public MarketPrice getPriceOld(@ApiParam(value="crypto currency symbol")
+            @RequestParam(value = "crypto") String crypto,
+            @ApiParam(value="fiat currency symbol")
+            @RequestParam(value = "fiat") String fiat) {
+        logger.info("/price: crypto: " + crypto + ", fiat: " + fiat);
+        return getPriceInternal(crypto, fiat);
+    }
+
+    private MarketPrice getPriceInternal(String crypto, String fiat) {
         BigDecimal price = pool.getPrice(crypto, fiat);
         if (price != null) {
             MarketPrice mp = new MarketPrice();
@@ -42,12 +61,13 @@ public class ExchangeController {
     }
 
     @ApiOperation(value="Get batches of exchange rates: crypto currencies -> fiat currencies")
-    @GetMapping(value="/prices")
+    @GetMapping(value="/market/prices")
     public List<MarketPrice> getPrices(
             @ApiParam(value="crypto currency symbols delimited by ','")
             @RequestParam(value = "cryptos") String cryptoCurrencies,
             @ApiParam(value="fiat currency symbol")
             @RequestParam(value = "fiat") String fiat) {
+        logger.info("/market/prices: cryptoCurrencies: " + cryptoCurrencies + ", fiat: " + fiat);
         List<MarketPrice> list = new ArrayList<>();
         String[] cryptos = cryptoCurrencies.split(",");
         for (String crypto: cryptos) {
