@@ -14,6 +14,7 @@ public class EventLog {
     public static final String EVENT_RECOVERY = "RECOVERY";
     public static final String EVENT_LOGIN = "LOGIN";
     public static final String EVENT_TRANSFER = "TRANSFER";
+    public static final String EVENT_DEX_EXCHANGE = "DEX_EXCHANGE";
     // predefined event data parameters
     public static final String EVENT_PARAM_PLATFORM = "platform";
     public static final String EVENT_PARAM_VERSION = "version";
@@ -21,6 +22,11 @@ public class EventLog {
     public static final String EVENT_PARAM_COIN = "coin";
     public static final String EVENT_PARAM_TOKEN = "token";
     public static final String EVENT_PARAM_AMOUNT = "amount";
+    public static final String EVENT_PARAM_SRC_TOKEN = "src_token";
+    public static final String EVENT_PARAM_DST_TOKEN = "dst_token";
+    public static final String EVENT_PARAM_SRC_QTY = "src_qty";
+    public static final String EVENT_PARAM_DST_QTY = "dst_qty";
+    public static final String EVENT_PARAM_WALLET_ID = "wallet_id";
 
     @Id
     private String id;

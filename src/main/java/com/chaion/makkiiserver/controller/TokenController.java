@@ -184,6 +184,11 @@ public class TokenController {
         return ethRepo.findAll(page).getContent();
     }
 
+    @GetMapping("/eth/token_name")
+    public List<EthToken> getEthTokenByTokenName(@RequestParam(value="token_name") String tokenName) {
+        return ethRepo.findBySymbol(tokenName);
+    }
+
     @ApiOperation(value="Get eth token icon")
     @GetMapping("/eth/img")
     public ResponseEntity<Resource> getEthTokenIcon(

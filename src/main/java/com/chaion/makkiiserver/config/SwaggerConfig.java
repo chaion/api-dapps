@@ -19,7 +19,7 @@ public class SwaggerConfig {
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.chaion.makkiiserver.controller"))
+                .apis(RequestHandlerSelectors.basePackage("com.chaion.makkiiserver"))
                 .paths(PathSelectors.any())
                 .build()
                 .apiInfo(apiEndpoints());
@@ -27,7 +27,7 @@ public class SwaggerConfig {
 
     private ApiInfo apiEndpoints() {
         return new ApiInfoBuilder().title("Makkii Server REST APIs")
-                .description("Version APIs, Coin market APIs, Token Crawler APIs")
+                .description("Version APIs, Coin market APIs, Token Crawler APIs, Pokket Service APIs")
                 .contact(new Contact("Chaion Makkii Team",
                         "https://chaion.net/",
                         "leo.ren@aion.network, chen@aion.network"))

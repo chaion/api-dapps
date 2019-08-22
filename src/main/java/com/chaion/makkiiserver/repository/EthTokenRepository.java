@@ -15,4 +15,6 @@ public interface EthTokenRepository extends MongoRepository<EthToken, String> {
 
     @Query("{'contractAddress': '?0'}")
     List<EthToken> findByContractAddress(String address, Pageable pageable);
+
+    List<EthToken> findBySymbol(String symbol);
 }

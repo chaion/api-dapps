@@ -1,5 +1,6 @@
 package com.chaion.makkiiserver;
 
+import com.chaion.makkiiserver.blockchain.BlockchainService;
 import com.chaion.makkiiserver.services.exchange.CurrencyService;
 import com.chaion.makkiiserver.services.exchange.ExchangePool;
 import org.slf4j.Logger;
@@ -22,6 +23,9 @@ public class ScheduledTasks {
     @Autowired
     private ExchangePool pool;
 
+    @Autowired
+    private BlockchainService blockchainService;
+
     @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchCurrencyRate() {
         logger.info("fetch currency rate");
@@ -37,5 +41,10 @@ public class ScheduledTasks {
             }
         }
         pool.dump();
+    }
+
+    @Scheduled(fixedRate = 10000)
+    public void checkPendingTxStatus() {
+        blockchainService.checkPendingTxStatus();
     }
 }
