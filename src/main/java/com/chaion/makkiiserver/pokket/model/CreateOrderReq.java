@@ -112,4 +112,21 @@ public class CreateOrderReq {
     public void setProductId(Long productId) {
         this.productId = productId;
     }
+
+    @Override
+    public String toString() {
+        return "CreateOrderReq{" +
+                "investorAddress='" + investorAddress + '\'' +
+                ", token='" + token + '\'' +
+                ", tokenFullName='" + tokenFullName + '\'' +
+                ", amount=" + amount +
+                ", collateralAddress='" + collateralAddress + '\'' +
+                ", weeklyInterestRate=" + weeklyInterestRate +
+                ", yearlyInterestRate=" + yearlyInterestRate +
+                ", token2Collateral=" + token2Collateral +
+                ", autoRoll=" + autoRoll +
+                ", productId=" + productId +
+                ", rawTransaction='" + rawTransaction + '\'' +
+                '}';
+    }
 }

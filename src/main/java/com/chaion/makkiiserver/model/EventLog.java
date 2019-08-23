@@ -97,4 +97,16 @@ public class EventLog {
     public void setDuration(Long duration) {
         this.duration = duration;
     }
+
+    @Override
+    public String toString() {
+        return "EventLog{" +
+                "id='" + id + '\'' +
+                ", user='" + user + '\'' +
+                ", event='" + event + '\'' +
+                ", data=" + data +
+                ", duration=" + duration +
+                ", created=" + created +
+                '}';
+    }
 }

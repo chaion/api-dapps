@@ -36,23 +36,27 @@ public class PokketController {
     @PutMapping("/order")
     public PokketOrder createOrder(@Valid @RequestBody CreateOrderReq req) {
         final String orderId = PokketUtil.generateOrderId();
+        logger.info("[pokket] new order id=" + orderId);
 
         String rawTransaction = req.getRawTransaction();
         String txHash = null;
         try {
             txHash = blockchainService.sendRawTransaction(rawTransaction);
+            logger.info("[pokket] sending invest raw transaction: txHash=" + txHash);
             blockchainService.addPendingTransaction(txHash, (transactionHash, status) -> {
                 PokketOrder order = getOrder(orderId);
                 if (status) {
+                    logger.info("[pokket] invest transaction is confirmed, update status to WAIT_COLLATERAL_DEPOSIT");
                     order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
                 } else {
-                    logger.error("[" + orderId + "] invest transaction receipt failed");
+                    logger.error("[pokket][" + orderId + "] invest transaction confirmed as failed");
                     order.setErrorMessage("invest transaction failed");
                     order.setStatus(PokketOrderStatus.ERROR);
                 }
                 repo.save(order);
             });
         } catch (BlockchainException e) {
+            logger.error("[pokket]sendRawTransaction exception: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid rawTransaction");
         }
 
@@ -89,7 +93,7 @@ public class PokketController {
 
         // check transaction
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(), token2TUSD, order.getWeeklyInterestRate());
-        if (blockchainService.validateERC20Transaction(txHash, POKKET_WALLET_ADDRESS, MAKKII_WALLET_ADDRESS,
+        if (!blockchainService.validateERC20Transaction(txHash, POKKET_WALLET_ADDRESS, MAKKII_WALLET_ADDRESS,
                 "TUSD", expectedTUSD)) {
             order.setStatus(PokketOrderStatus.ERROR);
             order.setDepositTUSDTransactionHash(txHash);
@@ -129,6 +133,7 @@ public class PokketController {
             order.setStatus(PokketOrderStatus.ERROR);
             order.setErrorMessage("finish order failed: txHashYieldTUSD=" + txHashYieldTUSD);
             repo.save(order);
+
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing parameter txHashYieldTUSD");
         }
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(),
