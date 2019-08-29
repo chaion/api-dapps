@@ -1,8 +1,8 @@
 package com.chaion.makkiiserver;
 
 import com.chaion.makkiiserver.blockchain.BlockchainService;
-import com.chaion.makkiiserver.services.exchange.CurrencyService;
-import com.chaion.makkiiserver.services.exchange.ExchangePool;
+import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
+import com.chaion.makkiiserver.modules.coinmarket.ExchangePool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +26,9 @@ public class ScheduledTasks {
     @Autowired
     private BlockchainService blockchainService;
 
+    /**
+     * Fetch currency rate every 30 minutes
+     */
     @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchCurrencyRate() {
         logger.info("fetch currency rate");
@@ -43,7 +46,10 @@ public class ScheduledTasks {
         pool.dump();
     }
 
-    @Scheduled(fixedRate = 10000)
+    /**
+     * check pending transaction status every 10 seconds
+     */
+    @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingTxStatus() {
         blockchainService.checkPendingTxStatus();
     }

@@ -1,6 +1,6 @@
 package com.chaion.makkiiserver;
 
-import com.chaion.makkiiserver.services.dapps.DAppProperties;
+import com.chaion.makkiiserver.modules.dappmarket.DAppProperties;
 import com.chaion.makkiiserver.repository.file.StorageProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

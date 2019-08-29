@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
+/**
+ * intercept http request and log request information
+ */
 @Aspect
 @Component
 public class HttpLogAdvice {
@@ -33,9 +36,7 @@ public class HttpLogAdvice {
         try {
             return joinPoint.proceed();
         } catch (Throwable throwable) {
-            logger.error("method:" + method.getDeclaringClass().getName() + "." + method.getName()
-                    + "\r\n args:" + argsString.toString()
-                    + "\r\n throw: " + throwable.getMessage());
+            logger.error("throw: " + throwable.getMessage());
             logger.error("Exception occurs in controller: ", throwable);
             throw throwable;
         }

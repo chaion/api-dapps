@@ -1,9 +1,10 @@
 package com.chaion.makkiiserver.blockchain;
 
-import com.chaion.makkiiserver.model.EthToken;
-import com.chaion.makkiiserver.pokket.model.TransactionStatus;
-import com.chaion.makkiiserver.pokket.model.TransactionStatusListener;
-import com.chaion.makkiiserver.repository.EthTokenRepository;
+import com.chaion.makkiiserver.modules.token.EthToken;
+import com.chaion.makkiiserver.modules.pokket.model.TransactionStatus;
+import com.chaion.makkiiserver.modules.pokket.model.TransactionStatusListener;
+import com.chaion.makkiiserver.modules.token.EthTokenRepository;
+import com.mongodb.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,12 @@ import org.web3j.abi.TypeDecoder;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.response.*;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.protocol.ipc.UnixIpcService;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,14 +39,100 @@ public class BlockchainService {
     EthTokenRepository ethTokenRepo;
 
     private Web3j ethWeb3j;
+
     /**
      * pending transaction list. scheduled task will check transactions' status.
      */
     private Map<String, TransactionStatus> pendingTransactions = new ConcurrentHashMap<>();
 
-    public BlockchainService(@Value("${blockchain.eth.rpcserver}") String rpcServer) {
-        logger.info("initialize blockchain service: " + rpcServer);
-        ethWeb3j = Web3j.build(new HttpService(rpcServer));
+    public BlockchainService(@Value("${blockchain.eth.rpcinterface}") String rpcServerInterface,
+                             @Value("${blockchain.eth.rpcserver}") String rpcServer) {
+        logger.info("initialize blockchain service: " + rpcServerInterface + ":" + rpcServer);
+        if (rpcServerInterface.equalsIgnoreCase("ipc")) {
+            ethWeb3j = AlethWeb3j.build(new UnixIpcService(rpcServer));
+        } else {
+            ethWeb3j = Web3j.build(new HttpService(rpcServer));
+        }
+    }
+
+    public BigInteger blockNumber() throws BlockchainException {
+        EthBlockNumber blockNumberResp = null;
+        try {
+            blockNumberResp = ethWeb3j.ethBlockNumber().sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        if (blockNumberResp.hasError()) {
+            throw new BlockchainException(blockNumberResp.getError().toString());
+        }
+        return blockNumberResp.getBlockNumber();
+    }
+
+    public EthBlock.Block getBlockByNumber(BigInteger blockNumber) throws BlockchainException {
+        EthBlock ethBlockResp = null;
+        try {
+            ethBlockResp = ethWeb3j.ethGetBlockByNumber(new DefaultBlockParameterNumber(blockNumber), false)
+                    .sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        if (ethBlockResp.hasError()) {
+            throw new BlockchainException(ethBlockResp.getError().toString());
+        }
+        EthBlock.Block block = ethBlockResp.getBlock();
+        return block;
+    }
+
+    public Transaction getTransaction(String txHash) throws BlockchainException {
+        EthTransaction resp = null;
+        try {
+            resp = ethWeb3j.ethGetTransactionByHash(txHash).sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        if (resp.hasError()) {
+            throw new BlockchainException(resp.getError().toString());
+        }
+        Optional<Transaction> transactionOpt = resp.getTransaction();
+        if (!transactionOpt.isPresent()) {
+            throw new BlockchainException("transaction is not present.");
+        }
+        return transactionOpt.get();
+    }
+
+    public TransactionReceipt getTransactionReceipt(String txHash) throws BlockchainException {
+        if (ethWeb3j instanceof AlethJsonRpc2_0Web3j) {
+            AlethJsonRpc2_0Web3j aw = (AlethJsonRpc2_0Web3j) ethWeb3j;
+            AlethEthGetTransactionReceipt resp = null;
+            try {
+                resp = aw.alethEthGetTransactionReceipt(txHash).sendAsync().get();
+            } catch (Exception e) {
+                throw new BlockchainException(e.getMessage());
+            }
+            if (resp.hasError()) {
+                throw new BlockchainException(resp.getError().toString());
+            }
+            Optional<PlainTransactionReceipt> receiptOpt = resp.getTransactionReceipt();
+            if (!receiptOpt.isPresent()) {
+                throw new BlockchainException("receipt is not present");
+            }
+            return receiptOpt.get();
+        } else {
+            EthGetTransactionReceipt resp = null;
+            try {
+                resp = ethWeb3j.ethGetTransactionReceipt(txHash).sendAsync().get();
+            } catch (Exception e) {
+                throw new BlockchainException(e.getMessage());
+            }
+            if (resp.hasError()) {
+                throw new BlockchainException(resp.getError().toString());
+            }
+            Optional<TransactionReceipt> receiptOpt = resp.getTransactionReceipt();
+            if (!receiptOpt.isPresent()) {
+                throw new BlockchainException("receipt is not present");
+            }
+            return receiptOpt.get();
+        }
     }
 
     /**
@@ -147,7 +237,8 @@ public class BlockchainService {
     }
 
     public boolean validateERC20Transaction(String transactionHash,
-                                            String expectedFrom, String expectedTo,
+                                            String expectedFrom,
+                                            String expectedTo,
                                             String token,
                                             BigDecimal expectedAmount) {
         logger.info("validate erc20 transfer transaction[transactionHash=" + transactionHash +
@@ -172,7 +263,7 @@ public class BlockchainService {
             return false;
         }
         TransactionReceipt receipt = receiptOpt.get();
-        if (!receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
+        if (expectedFrom != null && !receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
             logger.error("validate erc20 failed: from address is different: " + receipt.getFrom());
             return false;
         }
@@ -223,7 +314,7 @@ public class BlockchainService {
             Address address = (Address) refMethod.invoke(null, to, 0, Address.class);
             Uint256 amount = (Uint256) refMethod.invoke(null, value, 0, Uint256.class);
             // validate amount and to in input
-            if (!address.getValue().equalsIgnoreCase(expectedTo)) {
+            if (expectedTo != null && !address.getValue().equalsIgnoreCase(expectedTo)) {
                 logger.error("validate failed: to address is different: " + address.getValue());
                 return false;
             }
@@ -262,7 +353,7 @@ public class BlockchainService {
             return false;
         }
         TransactionReceipt receipt = receiptOpt.get();
-        if (!receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
+        if (expectedFrom != null && !receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
             logger.error("validate failed: from address is different: " + receipt.getFrom());
             return false;
         }
