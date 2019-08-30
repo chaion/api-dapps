@@ -15,6 +15,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.response.*;
@@ -53,6 +54,17 @@ public class BlockchainService {
         } else {
             ethWeb3j = Web3j.build(new HttpService(rpcServer));
         }
+    }
+
+    // ------------------------ pure jsonrepc -------------------------
+    public BigInteger getBalance(String address) throws BlockchainException {
+        EthGetBalance resp = null;
+        try {
+            ethWeb3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        return resp.getBalance();
     }
 
     public BigInteger blockNumber() throws BlockchainException {
