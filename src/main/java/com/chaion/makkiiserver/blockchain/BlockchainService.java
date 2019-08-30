@@ -60,7 +60,7 @@ public class BlockchainService {
     public BigInteger getBalance(String address) throws BlockchainException {
         EthGetBalance resp = null;
         try {
-            ethWeb3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).sendAsync().get();
+            resp = ethWeb3j.ethGetBalance(address, DefaultBlockParameterName.LATEST).sendAsync().get();
         } catch (Exception e) {
             throw new BlockchainException(e.getMessage());
         }
