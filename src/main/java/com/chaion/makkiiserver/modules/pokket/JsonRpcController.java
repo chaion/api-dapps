@@ -36,17 +36,17 @@ public class JsonRpcController {
             JsonArray array = root.get("params").getAsJsonArray();
             String address = array.get(0).getAsString();
             BigInteger count = blockchainService.getTransactionCount(address);
-            resp.addProperty("result", count.toString(16));
+            resp.addProperty("result", "0x" + count.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_blockNumber")) {
             BigInteger blocknumber = blockchainService.blockNumber();
-            resp.addProperty("result", blocknumber.toString(16));
+            resp.addProperty("result", "0x" + blocknumber.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_getBalance")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String address = array.get(0).getAsString();
             BigInteger balance = blockchainService.getBalance(address);
-            resp.addProperty("result", balance.toString(16));
+            resp.addProperty("result", "0x" + balance.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_sendRawTransaction")) {
             JsonArray array = root.get("params").getAsJsonArray();
@@ -57,25 +57,28 @@ public class JsonRpcController {
         } else if (method.equalsIgnoreCase("eth_getBlockByNumber")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String number = array.get(0).getAsString();
+            if (number.startsWith("0x")) {
+                number = number.substring(2);
+            }
             BigInteger n = new BigInteger(number, 16);
             EthBlock.Block block = blockchainService.getBlockByNumber(n);
             JsonObject result = new JsonObject();
-            result.addProperty("number", block.getNumber().toString(16));
-            result.addProperty("hash", block.getHash());
-            result.addProperty("parentHash", block.getParentHash());
-            result.addProperty("nonce", block.getNonce().toString(16));
-            result.addProperty("sha3Uncles", block.getSha3Uncles());
-            result.addProperty("logsBloom", block.getLogsBloom());
-            result.addProperty("transactionsRoot", block.getTransactionsRoot());
-            result.addProperty("stateRoot", block.getStateRoot());
-            result.addProperty("miner", block.getMiner());
-            result.addProperty("difficulty", block.getDifficulty().toString(16));
-            result.addProperty("totalDifficulty", block.getTotalDifficulty().toString(16));
-            result.addProperty("extraData", block.getExtraData());
-            result.addProperty("size", block.getSize().toString(16));
-            result.addProperty("gasLimit", block.getGasLimit().toString(16));
-            result.addProperty("gasUsed", block.getGasUsed().toString(16));
-            result.addProperty("timestamp", block.getTimestamp().toString(16));
+//            result.addProperty("number", "0x" + block.getNumber().toString(16));
+//            result.addProperty("hash", block.getHash());
+//            result.addProperty("parentHash", block.getParentHash());
+//            result.addProperty("nonce", "0x" + block.getNonce().toString(16));
+//            result.addProperty("sha3Uncles", block.getSha3Uncles());
+//            result.addProperty("logsBloom", block.getLogsBloom());
+//            result.addProperty("transactionsRoot", block.getTransactionsRoot());
+//            result.addProperty("stateRoot", block.getStateRoot());
+//            result.addProperty("miner", block.getMiner());
+//            result.addProperty("difficulty", "0x" + block.getDifficulty().toString(16));
+//            result.addProperty("totalDifficulty", "0x" + block.getTotalDifficulty().toString(16));
+//            result.addProperty("extraData", block.getExtraData());
+//            result.addProperty("size", "0x" + block.getSize().toString(16));
+//            result.addProperty("gasLimit", "0x" + block.getGasLimit().toString(16));
+//            result.addProperty("gasUsed", "0x" + block.getGasUsed().toString(16));
+            result.addProperty("timestamp", "0x" + block.getTimestamp().toString(16));
             List<String> uncles = block.getUncles();
             JsonArray unclesArray = new JsonArray();
             for (String uncle : uncles) {
@@ -92,7 +95,7 @@ public class JsonRpcController {
             JsonObject result = new JsonObject();
             result.addProperty("transactionHash", preceipt.getTransactionHash());
             result.addProperty("transactionIndex", preceipt.getTransactionIndexString());
-            result.addProperty("blockNumber", preceipt.getBlockNumberString());
+            result.addProperty("blockNumber", new BigInteger(preceipt.getBlockNumberString()).toString(16));
             result.addProperty("cumulativeGasUsed", preceipt.getCumulativeGasUsedString());
             result.addProperty("gasUsed", preceipt.getGasUsedString());
             result.addProperty("contractAddress", preceipt.getContractAddress());

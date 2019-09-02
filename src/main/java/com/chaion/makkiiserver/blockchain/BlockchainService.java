@@ -237,8 +237,8 @@ public class BlockchainService {
         logger.info("tx[" + txHash + "] tx block number=" + st.getBlockNumber() + ", latest block number=" + blockNumber);
         if (blockNumber.subtract(st.getBlockNumber()).longValue() > 6) {
             st.setStatus(TransactionStatus.CONFIRMED);
-            st.getListener().transactionConfirmed(txHash, true);
             pendingTransactions.remove(txHash);
+            st.getListener().transactionConfirmed(txHash, true);
         }
     }
 

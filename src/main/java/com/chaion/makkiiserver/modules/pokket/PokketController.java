@@ -45,18 +45,24 @@ public class PokketController {
             blockchainService.addPendingTransaction(txHash, (transactionHash, status) -> {
                 PokketOrder order = getOrder(orderId);
                 if (status) {
-                    Long pokketOrderId = pokketService.createOrder(orderId,
-                            req.getProductId(),
-                            req.getInvestorAddress(),
-                            req.getCollateralAddress(),
-                            req.getAmount(),
-                            currentTime,
-                            transactionHash);
-                    order.setPokketOrderId(pokketOrderId);
-                    repo.save(order);
+                    Long pokketOrderId = null;
+                    try {
+                        pokketOrderId = pokketService.createOrder(orderId,
+                                req.getProductId(),
+                                req.getInvestorAddress(),
+                                req.getCollateralAddress(),
+                                req.getAmount(),
+                                currentTime,
+                                transactionHash);
+                        order.setPokketOrderId(pokketOrderId);
 
-                    logger.info("[pokket] invest transaction is confirmed, update status to WAIT_COLLATERAL_DEPOSIT");
-                    order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
+                        logger.info("[pokket] invest transaction is confirmed, update status to WAIT_COLLATERAL_DEPOSIT");
+                        order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
+                    } catch (Exception e) {
+                        logger.error("call pokket createOrder exception: " + e.getMessage(), e);
+                        order.setStatus(PokketOrderStatus.ERROR);
+                        order.setErrorMessage("call pokket /deposit/deposit exception" + e.getMessage());
+                    }
                 } else {
                     logger.error("[pokket][" + orderId + "] invest transaction confirmed as failed");
                     order.setErrorMessage("invest transaction failed");
