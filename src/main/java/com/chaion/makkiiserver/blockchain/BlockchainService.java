@@ -4,7 +4,6 @@ import com.chaion.makkiiserver.modules.token.EthToken;
 import com.chaion.makkiiserver.modules.pokket.model.TransactionStatus;
 import com.chaion.makkiiserver.modules.pokket.model.TransactionStatusListener;
 import com.chaion.makkiiserver.modules.token.EthTokenRepository;
-import com.mongodb.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,7 @@ import org.web3j.abi.TypeDecoder;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.core.Response;
@@ -56,7 +55,16 @@ public class BlockchainService {
         }
     }
 
-    // ------------------------ pure jsonrepc -------------------------
+    // ------------------------ pure jsonrpc -------------------------
+    public BigInteger getTransactionCount(String address) throws BlockchainException {
+        EthGetTransactionCount resp;
+        try {
+            resp = ethWeb3j.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        return resp.getTransactionCount();
+    }
     public BigInteger getBalance(String address) throws BlockchainException {
         EthGetBalance resp = null;
         try {
@@ -173,6 +181,22 @@ public class BlockchainService {
         }
     }
 
+    public String call(org.web3j.protocol.core.methods.request.Transaction tx, DefaultBlockParameter param) throws BlockchainException {
+        EthCall resp = null;
+
+        try {
+            resp = ethWeb3j.ethCall(tx, param).sendAsync().get();
+            if (resp.hasError()) {
+                Response.Error error = resp.getError();
+                throw new BlockchainException(error.toString());
+            }
+            return resp.getValue();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+
+    }
+
     /**
      * add transaction to pending transaction list.
      *
@@ -219,27 +243,23 @@ public class BlockchainService {
     }
 
     private void checkTxStatusOfReceipt(TransactionStatus st, String txHash) {
-        EthGetTransactionReceipt receiptResp = null;
+        TransactionReceipt receipt = null;
         try {
-            receiptResp = ethWeb3j.ethGetTransactionReceipt(txHash).sendAsync().get();
+            receipt = getTransactionReceipt(txHash);
         } catch (Exception e) {
-            logger.error("[eth][getTransactionReceipt] txHash=" + txHash + " exception: ", e);
+            // ignore exception
             return;
         }
-        if (receiptResp.hasError()) {
-            logger.debug("[eth][getTransactionReceipt] txHash=" + txHash + ", error: " + receiptResp.getError());
-            return;
-        }
-        Optional<TransactionReceipt> receiptOpt = receiptResp.getTransactionReceipt();
-        if (!receiptOpt.isPresent()) {
-            logger.debug("[eth][getTransactionReceipt] txHash=" + txHash + " receipt is not present");
-            return;
-        }
-        TransactionReceipt receipt = receiptOpt.get();
         if (receipt.isStatusOK()) {
-            logger.info("tx[" + txHash + "] confirmed ok, block number="
-                    + receipt.getBlockNumber() + ". wait block confirmation");
-            st.setBlockNumber(receipt.getBlockNumber());
+            if (receipt instanceof PlainTransactionReceipt) {
+                logger.info("tx[" + txHash + "] confirmed ok, block number="
+                        + ((PlainTransactionReceipt) receipt).getBlockNumberString() + ". wait block confirmation");
+                st.setBlockNumber(new BigInteger(((PlainTransactionReceipt) receipt).getBlockNumberString()));
+            } else {
+                logger.info("tx[" + txHash + "] confirmed ok, block number="
+                        + receipt.getBlockNumber() + ". wait block confirmation");
+                st.setBlockNumber(receipt.getBlockNumber());
+            }
             st.setStatus(TransactionStatus.WAIT_BLOCK_NUMBER);
         } else {
             logger.info("tx[" + txHash + "] receipt is confirmed fail");

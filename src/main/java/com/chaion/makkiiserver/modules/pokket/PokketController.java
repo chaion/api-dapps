@@ -35,6 +35,7 @@ public class PokketController {
     public PokketOrder createOrder(@Valid @RequestBody CreateOrderReq req) {
         final String orderId = PokketUtil.generateOrderId();
         logger.info("[pokket] new order id=" + orderId);
+        long currentTime = System.currentTimeMillis();
 
         String rawTransaction = req.getRawTransaction();
         String txHash = null;
@@ -44,6 +45,16 @@ public class PokketController {
             blockchainService.addPendingTransaction(txHash, (transactionHash, status) -> {
                 PokketOrder order = getOrder(orderId);
                 if (status) {
+                    Long pokketOrderId = pokketService.createOrder(orderId,
+                            req.getProductId(),
+                            req.getInvestorAddress(),
+                            req.getCollateralAddress(),
+                            req.getAmount(),
+                            currentTime,
+                            transactionHash);
+                    order.setPokketOrderId(pokketOrderId);
+                    repo.save(order);
+
                     logger.info("[pokket] invest transaction is confirmed, update status to WAIT_COLLATERAL_DEPOSIT");
                     order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
                 } else {
@@ -58,7 +69,6 @@ public class PokketController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid rawTransaction");
         }
 
-        long currentTime = System.currentTimeMillis();
         PokketOrder order = new PokketOrder();
         order.setOrderId(orderId);
         order.setInvestorAddress(req.getInvestorAddress());
@@ -78,16 +88,6 @@ public class PokketController {
         order.setProductId(req.getProductId());
         order.setCreateTime(currentTime);
         order.setStatus(PokketOrderStatus.WAIT_INVEST_TX_CONFIRM);
-        repo.save(order);
-
-        Long pokketOrderId = pokketService.createOrder(orderId,
-                req.getProductId(),
-                req.getInvestorAddress(),
-                req.getCollateralAddress(),
-                req.getAmount(),
-                currentTime,
-                txHash);
-        order.setPokketOrderId(pokketOrderId);
         repo.save(order);
 
         return order;
