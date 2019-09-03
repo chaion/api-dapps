@@ -34,7 +34,7 @@ public class PokketController {
     @PutMapping("/order")
     public PokketOrder createOrder(@Valid @RequestBody CreateOrderReq req) {
         final String orderId = PokketUtil.generateOrderId();
-        logger.info("[pokket] new order id=" + orderId);
+        logger.info("[pokket] receive new order request, generate order id=" + orderId);
         long currentTime = System.currentTimeMillis();
 
         String rawTransaction = req.getRawTransaction();
@@ -282,18 +282,18 @@ public class PokketController {
         return true;
     }
 
+    @ApiOperation(value="Get investors' orders")
     @GetMapping("/order")
-    public Page<PokketOrder> getOrders(@RequestParam(value="addresses") String addresses,
-                                       @RequestParam(value="page") int page,
-                                       @RequestParam(value="size") int size) {
-        List<String> addressList = Arrays.asList(addresses.split(","));
+    public Page<PokketOrder> getOrders(GetOrderReq getOrderReq) {
+        List<String> addressList = getOrderReq.getAddresses();
 
         Sort sort = new Sort(Sort.Direction.DESC, "status", "createTime");
         Page<PokketOrder> orders = repo.findByInvestorAddressInAndStatusIsNot(addressList, PokketOrderStatus.ERROR,
-                PageRequest.of(page, size, sort));
+                PageRequest.of(getOrderReq.getPage(), getOrderReq.getSize(), sort));
         return orders;
     }
 
+    @ApiOperation(value="Get all financial products")
     @GetMapping("/product")
     public List<PokketProduct> getProducts(@RequestParam(value="search", required = false) String search) {
         if (search == null || search.isEmpty()) {
@@ -303,21 +303,26 @@ public class PokketController {
         }
     }
 
+    @ApiOperation(value="Get pokket's total deposit amount, including deposits on pokket's website")
     @GetMapping("/statistic/totalInvestment")
     public BigDecimal getTotalInvestment() {
         return pokketService.getTotalInvestment();
     }
 
+    @ApiOperation(value="Get pokket's Bitcoin address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/btc_address")
     public String getDepositBtcAddress() {
         return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_BITCOIN);
     }
 
+    @ApiOperation(value="Get pokket's ethereum address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/eth_address")
     public String getDepositEthAddress() {
         return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_ETH);
     }
 
+    @ApiOperation(value="Get pokket financial banner images for advertisement use.",
+        notes = "response is an array containing image download url")
     @GetMapping("/banners")
     public String[] getBanners() {
         return new String[] {
@@ -326,6 +331,12 @@ public class PokketController {
         };
     }
 
+    /**
+     * Fetch pokket order from db.
+     *
+     * @param orderId
+     * @return
+     */
     private PokketOrder getOrder(String orderId) {
         Optional<PokketOrder> orderOpt = repo.findById(orderId);
         if (!orderOpt.isPresent()) {

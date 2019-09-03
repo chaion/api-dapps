@@ -10,6 +10,9 @@ import java.util.Optional;
 import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.Response;
 
+/**
+ *
+ */
 public class AlethEthGetTransactionReceipt extends Response<PlainTransactionReceipt> {
     public AlethEthGetTransactionReceipt() {
     }

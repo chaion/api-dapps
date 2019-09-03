@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class OnStart implements ApplicationRunner {
 
-    // TODO: add works during start up
+    // TODO: add jobs during start up
     @Override
     public void run(ApplicationArguments args) {}
 

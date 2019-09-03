@@ -6,6 +6,13 @@ import java.io.File;
 import java.io.IOException;
 
 public class Utils {
+    /**
+     * Get image width and height
+     *
+     * @param imageFile
+     * @return
+     * @throws IOException
+     */
     public static int[] getImageSize(File imageFile) throws IOException {
         BufferedImage image = ImageIO.read(imageFile);
         return new int[] {
@@ -13,6 +20,12 @@ public class Utils {
         };
     }
 
+    /**
+     * Convert byte array to string
+     *
+     * @param src
+     * @return
+     */
     public static String bytesToHexString(byte[] src){
         StringBuilder stringBuilder = new StringBuilder("");
         if (src == null || src.length <= 0) {

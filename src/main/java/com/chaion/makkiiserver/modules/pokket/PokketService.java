@@ -24,8 +24,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * This service is the stub client of pokket server side.
+ *
+ * https://aion.baibaitesting.com/doc/index.html
+ */
 @Service
 public class PokketService {
+
     private static final Logger logger = LoggerFactory.getLogger(PokketService.class);
 
     public static final String ADDRESS_TYPE_ETH = "ERC20";
@@ -34,18 +40,36 @@ public class PokketService {
     @Autowired
     RestTemplate restClient;
 
+    /**
+     * pokket server base url
+     */
     @Value("${pokket.server}")
     String baseUrl;
+
+    @Value("${pokket.server.pubkey}")
+    String pkFileName;
 
     private RsaProvider rsaProvider;
 
     public PokketService() throws IOException {
         rsaProvider = new RsaProvider();
-        ClassPathResource classPathResource = new ClassPathResource("pokket_public.pem");
+        ClassPathResource classPathResource = new ClassPathResource(pkFileName);
         InputStream stream = classPathResource.getInputStream();
         rsaProvider.loadPemFile(stream);
     }
 
+    /**
+     * after investment transaction is confirmed, notify pokket server of this purchase order.
+     *
+     * @param orderId
+     * @param productId
+     * @param investorAddress
+     * @param collateralAddress
+     * @param amount
+     * @param orderTime
+     * @param depositTransactionHash
+     * @return
+     */
     public Long createOrder(String orderId,
                                    Long productId,
                                    String investorAddress,
@@ -112,6 +136,13 @@ public class PokketService {
         }
     }
 
+    /**
+     * Client won't call this interface any more, client will filter locally.
+     *
+     * @param search
+     * @return
+     */
+    @Deprecated
     public List<PokketProduct> searchProducts(String search) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -128,6 +159,10 @@ public class PokketService {
         }
     }
 
+    /**
+     * Get current product list
+     * @return
+     */
     public List<PokketProduct> getProducts() {
         String url = baseUrl + "/products/list";
         ResponseEntity<String> response = restClient.getForEntity(url, String.class);
@@ -157,6 +192,10 @@ public class PokketService {
         return allProducts;
     }
 
+    /**
+     * Get total pokket investment amount
+     * @return
+     */
     public BigDecimal getTotalInvestment() {
         String url = baseUrl + "/deposit/total_amount";
         ResponseEntity<String> response = restClient.getForEntity(url, String.class);
@@ -168,6 +207,12 @@ public class PokketService {
         }
     }
 
+    /**
+     * Get what addresses investors should transfer coins/tokens to.
+     *
+     * @param type either ERC20 or Bitcoin
+     * @return
+     */
     public String getDepositAddress(String type) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
