@@ -43,15 +43,16 @@ public class PokketService {
     /**
      * pokket server base url
      */
-    @Value("${pokket.server}")
     String baseUrl;
 
-    @Value("${pokket.server.pubkey}")
     String pkFileName;
 
     private RsaProvider rsaProvider;
 
-    public PokketService() throws IOException {
+    public PokketService(@Value("${pokket.server.pubkey}") String pkFileName, @Value("${pokket.server.baseurl}") String baseUrl) throws IOException {
+        logger.info("initialize pokket service: baseurl=" + baseUrl + ", pkFileName=" + pkFileName);
+        this.baseUrl = baseUrl;
+
         rsaProvider = new RsaProvider();
         ClassPathResource classPathResource = new ClassPathResource(pkFileName);
         InputStream stream = classPathResource.getInputStream();

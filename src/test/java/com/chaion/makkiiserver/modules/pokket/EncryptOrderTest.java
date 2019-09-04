@@ -30,7 +30,7 @@ public class EncryptOrderTest {
         String encrypted = CipherHelper.toString(bytes);
         System.out.println("deposit_cipher: " + encrypted);
 //        RsaProvider rsaProvider = new RsaProvider();
-//        ClassPathResource classPathResource = new ClassPathResource("pokket_public.pem");
+//        ClassPathResource classPathResource = new ClassPathResource("pokket_test_pk.pem");
 //        InputStream stream = classPathResource.getInputStream();
 //        rsaProvider.loadPemFile(stream);
 //

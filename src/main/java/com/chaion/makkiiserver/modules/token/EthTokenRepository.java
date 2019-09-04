@@ -17,4 +17,6 @@ public interface EthTokenRepository extends MongoRepository<EthToken, String> {
     List<EthToken> findByContractAddress(String address, Pageable pageable);
 
     List<EthToken> findBySymbol(String symbol);
+
+    List<EthToken> findBySymbolIn(List<String> tokenSymbols);
 }

@@ -4,6 +4,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.Objects;
+
 @ApiModel(description="Eth Token")
 public class EthToken {
 
@@ -106,6 +108,19 @@ public class EthToken {
 
     public void setContractType(String contractType) {
         this.contractType = contractType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EthToken ethToken = (EthToken) o;
+        return contractAddr.equals(ethToken.contractAddr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(contractAddr);
     }
 
     @Override

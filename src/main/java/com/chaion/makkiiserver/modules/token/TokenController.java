@@ -26,6 +26,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Api(value="Token Management APIs", description="List and search tokens, current support tokens are eth and ats.")
@@ -155,6 +157,13 @@ public class TokenController {
     // ----------------------------------------------------------------
     // ----------------------- ETH Token -----------------------------
     // ----------------------------------------------------------------
+    @ApiOperation(value="Add Eth token",
+            notes = "tokens in db are crawled from etherscan.io. if some tokens are missing in etherscan, we can use this interface to add.")
+    @PutMapping("/eth")
+    public EthToken addEthToken(@RequestBody EthToken token) {
+        return ethRepo.insert(token);
+    }
+
     @ApiOperation(value="Get/Search ERC20 tokens by page",
             notes = "if keyword parameter is not present, this api will return all eth tokens by page; " +
                     "if it is present and is an address format, this api will do a full match against address; " +
@@ -178,6 +187,25 @@ public class TokenController {
             return ethRepo.findByName(keyword, page);
         }
         return ethRepo.findAll(page).getContent();
+    }
+
+    @GetMapping("/eth/popular")
+    public List<EthToken> getEthPopularTokens() {
+        String[] pokketTokenSymbols = new String[] {
+                "DENT", "MTH", "WABI", "EVX", "FUEL", "SNM", "OAX",
+                "BRD", "OST", "ARN", "TNT", "AST", "CND", "EDO",
+                "ETHOS", "KNC", "ENJ", "RLC", "DLT", "APPC", "LRC",
+                "POLY", "OMG", "POWR", "MCO", "MKR", "STORJ", "LEO",
+                "BNT"
+        };
+        List<EthToken> popularTokens = ethRepo.findBySymbolIn(Arrays.asList(pokketTokenSymbols));
+        List<EthToken> topTokens = ethRepo.findAll(PageRequest.of(0, 20)).getContent();
+        for (EthToken token : topTokens) {
+            if (!popularTokens.contains(token)) {
+                popularTokens.add(token);
+            }
+        }
+        return popularTokens;
     }
 
     @GetMapping("/eth/token_name")

@@ -4,6 +4,7 @@ import com.chaion.makkiiserver.blockchain.BlockchainException;
 import com.chaion.makkiiserver.modules.pokket.model.*;
 import com.chaion.makkiiserver.modules.pokket.repository.PokketOrderRepository;
 import com.chaion.makkiiserver.blockchain.BlockchainService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import java.util.*;
 
 import static com.chaion.makkiiserver.modules.pokket.PokketUtil.*;
 
+@Api(value = "Pokket Financial APIs", description="Some Apis are for wallet, some are for pokket server")
 @RestController
 @RequestMapping("pokket")
 public class PokketController {
