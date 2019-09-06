@@ -1,8 +1,8 @@
 package com.chaion.makkiiserver.modules.pokket;
 
-import com.chaion.makkiiserver.blockchain.BlockchainException;
-import com.chaion.makkiiserver.blockchain.BlockchainService;
-import com.chaion.makkiiserver.blockchain.PlainTransactionReceipt;
+import com.chaion.makkiiserver.blockchain.eth.BlockchainException;
+import com.chaion.makkiiserver.blockchain.eth.EthService;
+import com.chaion.makkiiserver.blockchain.eth.PlainTransactionReceipt;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -17,11 +17,14 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import java.math.BigInteger;
 import java.util.List;
 
+/**
+ * This is only for pokket's private chain jsonrpc
+ */
 @RestController
 @RequestMapping("pokketchain")
 public class JsonRpcController {
     @Autowired
-    BlockchainService blockchainService;
+    EthService ethService;
 
     @PostMapping
     public String jsonrpc(@RequestBody String payload) throws BlockchainException {
@@ -35,23 +38,23 @@ public class JsonRpcController {
         if (method.equalsIgnoreCase("eth_getTransactionCount")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String address = array.get(0).getAsString();
-            BigInteger count = blockchainService.getTransactionCount(address);
+            BigInteger count = ethService.getTransactionCount(address);
             resp.addProperty("result", "0x" + count.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_blockNumber")) {
-            BigInteger blocknumber = blockchainService.blockNumber();
+            BigInteger blocknumber = ethService.blockNumber();
             resp.addProperty("result", "0x" + blocknumber.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_getBalance")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String address = array.get(0).getAsString();
-            BigInteger balance = blockchainService.getBalance(address);
+            BigInteger balance = ethService.getBalance(address);
             resp.addProperty("result", "0x" + balance.toString(16));
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_sendRawTransaction")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String raw = array.get(0).getAsString();
-            String txHash = blockchainService.sendRawTransaction(raw);
+            String txHash = ethService.sendRawTransaction(raw);
             resp.addProperty("result", txHash);
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_getBlockByNumber")) {
@@ -61,7 +64,7 @@ public class JsonRpcController {
                 number = number.substring(2);
             }
             BigInteger n = new BigInteger(number, 16);
-            EthBlock.Block block = blockchainService.getBlockByNumber(n);
+            EthBlock.Block block = ethService.getBlockByNumber(n);
             JsonObject result = new JsonObject();
 //            result.addProperty("number", "0x" + block.getNumber().toString(16));
 //            result.addProperty("hash", block.getHash());
@@ -90,7 +93,7 @@ public class JsonRpcController {
         } else if (method.equalsIgnoreCase("eth_getTransactionReceipt")) {
             JsonArray array = root.get("params").getAsJsonArray();
             String txHash = array.get(0).getAsString();
-            TransactionReceipt receipt = blockchainService.getTransactionReceipt(txHash);
+            TransactionReceipt receipt = ethService.getTransactionReceipt(txHash);
             PlainTransactionReceipt preceipt = (PlainTransactionReceipt) receipt;
             JsonObject result = new JsonObject();
             result.addProperty("transactionHash", preceipt.getTransactionHash());
@@ -112,7 +115,7 @@ public class JsonRpcController {
                     new org.web3j.protocol.core.methods.request.Transaction(null, null, null, null, to, null, data);
             String quantity = array.get(1).getAsString();
             DefaultBlockParameter param = DefaultBlockParameterName.fromString(quantity);
-            String value = blockchainService.call(transaction, param);
+            String value = ethService.call(transaction, param);
             resp.addProperty("result", value);
             return resp.toString();
         }
@@ -120,11 +123,11 @@ public class JsonRpcController {
     }
 
     @GetMapping("/eth/transactionByHash")
-    public String transactionByHash(@RequestParam("txHash") String txHash) throws BlockchainException {
-        Transaction transaction = blockchainService.getTransaction(txHash);
+    public String transactionByHash(@RequestParam("txId") String txHash) throws BlockchainException {
+        Transaction transaction = ethService.getTransaction(txHash);
         JsonObject jo = new JsonObject();
         jo.addProperty("value", transaction.getValue());
-        jo.addProperty("txHash", transaction.getHash());
+        jo.addProperty("txId", transaction.getHash());
         jo.addProperty("input", transaction.getInput());
         return jo.toString();
     }

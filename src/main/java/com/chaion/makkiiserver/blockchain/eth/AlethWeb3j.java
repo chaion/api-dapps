@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.blockchain;
+package com.chaion.makkiiserver.blockchain.eth;
 
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;

@@ -17,7 +17,7 @@ public class ConfigController {
     public DefaultConfig getDefaultConfig() {
         DefaultConfig config = new DefaultConfig();
         config.setKyberWalletId("0x4BE78b8BA92567AB0889BE896578Be56B816D318");
-        config.setSupportedModule(new String[] {"Pokket", "News", "Kyber"});
+        config.setSupportedModule(new String[] {/*"Pokket",*/ "News", "Kyber"});
         return config;
     }
 }

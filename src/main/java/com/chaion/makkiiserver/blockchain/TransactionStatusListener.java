@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.modules.pokket.model;
+package com.chaion.makkiiserver.blockchain;
 
 public interface TransactionStatusListener {
     /**

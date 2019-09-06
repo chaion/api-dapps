@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.blockchain;
+package com.chaion.makkiiserver.blockchain.eth;
 
 import java.util.List;
 

@@ -1,9 +1,11 @@
 package com.chaion.makkiiserver.modules.pokket;
 
-import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.BaseBlockchain;
+import com.chaion.makkiiserver.blockchain.btc.BtcService;
+import com.chaion.makkiiserver.blockchain.eth.BlockchainException;
 import com.chaion.makkiiserver.modules.pokket.model.*;
 import com.chaion.makkiiserver.modules.pokket.repository.PokketOrderRepository;
-import com.chaion.makkiiserver.blockchain.BlockchainService;
+import com.chaion.makkiiserver.blockchain.eth.EthService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -31,7 +33,9 @@ public class PokketController {
 
     @Autowired PokketOrderRepository repo;
     @Autowired PokketService pokketService;
-    @Autowired BlockchainService blockchainService;
+    @Autowired EthService ethService;
+    @Autowired
+    BtcService btcService;
 
     @PutMapping("/order")
     public PokketOrder createOrder(@Valid @RequestBody CreateOrderReq req) {
@@ -40,11 +44,17 @@ public class PokketController {
         long currentTime = System.currentTimeMillis();
 
         String rawTransaction = req.getRawTransaction();
-        String txHash = null;
+        String txId = null;
+        BaseBlockchain blockchain = null;
         try {
-            txHash = blockchainService.sendRawTransaction(rawTransaction);
-            logger.info("[pokket] sending invest raw transaction: txHash=" + txHash);
-            blockchainService.addPendingTransaction(txHash, (transactionHash, status) -> {
+            if (req.getToken().equalsIgnoreCase(BTC)) {
+                blockchain = btcService;
+            } else {
+                blockchain = ethService;
+            }
+            txId = blockchain.sendRawTransaction(rawTransaction);
+            logger.info("[pokket][" + req.getToken() + "] sending invest raw transaction: txId=" + txId);
+            blockchain.addPendingTransaction(txId, (transactionHash, status) -> {
                 PokketOrder order = getOrder(orderId);
                 if (status) {
                     Long pokketOrderId = null;
@@ -89,7 +99,7 @@ public class PokketController {
         order.setAmount(req.getAmount());
         order.setWeeklyInterestRate(req.getWeeklyInterestRate());
         order.setYearlyInterestRate(req.getYearlyInterestRate());
-        order.setInvestTransactionHash(txHash);
+        order.setInvestTransactionHash(txId);
         order.setToken2Collateral(req.getToken2Collateral());
         // not implement this feature in this phase
 //        order.setAutoRoll(req.isAutoRoll());
@@ -133,8 +143,8 @@ public class PokketController {
         // validate transaction
         BigDecimal tusdTransfer = totalDepositTUSD.subtract(totalWithdrawTUSD);
         if (tusdTransfer.signum() > 0) {
-            if (!blockchainService.validateERC20Transaction(transactionHash,
-                    POKKET_WALLET_ADDRESS,
+            if (!ethService.validateERC20Transaction(transactionHash,
+                    POKKET_ETH_WALLET_ADDRESS,
                     MAKKII_WALLET_ADDRESS,
                     TUSD,
                     tusdTransfer.abs()
@@ -151,9 +161,9 @@ public class PokketController {
                                 + ", deposit tusd=" + totalDepositTUSD);
             }
         } else if (tusdTransfer.signum() < 0) {
-            if (!blockchainService.validateERC20Transaction(transactionHash,
+            if (!ethService.validateERC20Transaction(transactionHash,
                     MAKKII_WALLET_ADDRESS,
-                    POKKET_WALLET_ADDRESS,
+                    POKKET_ETH_WALLET_ADDRESS,
                     TUSD,
                     tusdTransfer.abs())) {
                 for (PokketOrder order : newOrders) {
@@ -213,18 +223,13 @@ public class PokketController {
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(),
                 order.getToken2Collateral(),
                 order.getWeeklyInterestRate());
-        if (order.getToken().equalsIgnoreCase("BTC")) {
-            // TODO: handle BTC
+        String expectedTo = order.getCollateralAddress() != null ? order.getCollateralAddress() : order.getInvestorAddress();
+        // TODO: validate from/to
+        if (!ethService.validateERC20Transaction(txHashYieldTUSD, POKKET_ETH_WALLET_ADDRESS, null/*expectedTo*/, TUSD, expectedTUSD)) {
+            order.setStatus(PokketOrderStatus.ERROR);
+            order.setErrorMessage("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
+            logger.error("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
             return false;
-        } else {
-            String expectedTo = order.getCollateralAddress() != null ? order.getCollateralAddress() : order.getInvestorAddress();
-            // TODO: validate from/to
-            if (!blockchainService.validateERC20Transaction(txHashYieldTUSD, POKKET_WALLET_ADDRESS, null/*expectedTo*/, TUSD, expectedTUSD)) {
-                order.setStatus(PokketOrderStatus.ERROR);
-                order.setErrorMessage("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
-                logger.error("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
-                return false;
-            }
         }
         order.setYieldTUSDTransactionHash(txHashYieldTUSD);
         order.setStatus(PokketOrderStatus.COMPLETE);
@@ -246,11 +251,20 @@ public class PokketController {
         }
 
         BigDecimal expectedAmount = order.getAmount().multiply(order.getWeeklyInterestRate().add(new BigDecimal(1)));
-        if (order.getToken().equalsIgnoreCase("BTC")) {
-            // TODO:
-            return false;
-        } else if (order.getToken().equalsIgnoreCase("ETH")) {
-            if (!blockchainService.validateEthTx(txHashYieldToken, POKKET_WALLET_ADDRESS, null/*order.getInvestorAddress()*/, expectedAmount)) {
+        if (order.getToken().equalsIgnoreCase(BTC)) {
+            if (!btcService.validateBtcTransaction(
+                    txHashYieldToken,
+                    POKKET_BTC_WALLET_ADDRESS,
+                    null/*order.getInvestorAddress()*/,
+                    expectedAmount)) {
+                order.setStatus(PokketOrderStatus.ERROR);
+                order.setErrorMessage("Finish order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
+                logger.error("Yield token transaction(" + txHashYieldToken + ") is invalid");
+                repo.save(order);
+                return false;
+            }
+        } else if (order.getToken().equalsIgnoreCase(ETH)) {
+            if (!ethService.validateEthTx(txHashYieldToken, POKKET_ETH_WALLET_ADDRESS, null/*order.getInvestorAddress()*/, expectedAmount)) {
                 order.setStatus(PokketOrderStatus.ERROR);
                 order.setErrorMessage("Finish order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
                 logger.error("Yield token transaction(" + txHashYieldToken + ") is invalid");
@@ -258,8 +272,8 @@ public class PokketController {
                 return false;
             }
         } else {
-            if (!blockchainService.validateERC20Transaction(txHashYieldToken,
-                    POKKET_WALLET_ADDRESS, null/*order.getInvestorAddress()*/, order.getToken(), expectedAmount)) {
+            if (!ethService.validateERC20Transaction(txHashYieldToken,
+                    POKKET_ETH_WALLET_ADDRESS, null/*order.getInvestorAddress()*/, order.getToken(), expectedAmount)) {
                 order.setStatus(PokketOrderStatus.ERROR);
                 order.setErrorMessage("Finish Order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
                 logger.error("Finish Order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
@@ -270,7 +284,7 @@ public class PokketController {
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(),
                 order.getToken2Collateral(),
                 order.getWeeklyInterestRate());
-        if (!blockchainService.validateERC20Transaction(txHashReturnTUSD, MAKKII_WALLET_ADDRESS, POKKET_WALLET_ADDRESS, TUSD, expectedTUSD)) {
+        if (!ethService.validateERC20Transaction(txHashReturnTUSD, MAKKII_WALLET_ADDRESS, POKKET_ETH_WALLET_ADDRESS, TUSD, expectedTUSD)) {
             order.setStatus(PokketOrderStatus.ERROR);
             order.setErrorMessage("Finish order(" + orderId + ") failed: Return TUSD transaction(" + txHashReturnTUSD + ") is invalid");
             logger.error("Finish order(" + orderId + ") failed: Return TUSD transaction(" + txHashReturnTUSD + ") is invalid");
@@ -326,11 +340,20 @@ public class PokketController {
     @ApiOperation(value="Get pokket financial banner images for advertisement use.",
         notes = "response is an array containing image download url")
     @GetMapping("/banners")
-    public String[] getBanners() {
-        return new String[] {
-            "http://45.118.132.89/banner1.png",
-            "http://45.118.132.89/banner2.png"
-        };
+    public List<Banner> getBanners() {
+        List<Banner> banners = new ArrayList<>();
+
+        Banner b1 = new Banner();
+        b1.setImageUrl("http://45.118.132.89/banner1.png");
+        b1.setLink(null);
+        banners.add(b1);
+
+        Banner b2 = new Banner();
+        b2.setImageUrl("http://45.118.132.89/banner2.png");
+        b2.setLink(null);
+        banners.add(b2);
+
+        return banners;
     }
 
     /**

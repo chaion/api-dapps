@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.modules.pokket.model;
+package com.chaion.makkiiserver.blockchain;
 
 import lombok.Data;
 
@@ -20,13 +20,13 @@ public class TransactionStatus {
      */
     public static final String CONFIRMED = "confirmed";
 
-    private String txHash;
+    private String txId;
     private BigInteger blockNumber;
     private String status;
     private TransactionStatusListener listener;
 
-    public TransactionStatus(String txHash, TransactionStatusListener listener) {
-        this.txHash = txHash;
+    public TransactionStatus(String txId, TransactionStatusListener listener) {
+        this.txId = txId;
         this.listener = listener;
         this.status = WAIT_RECEIPT;
     }

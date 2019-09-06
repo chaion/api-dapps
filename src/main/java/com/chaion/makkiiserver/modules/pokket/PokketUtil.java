@@ -10,13 +10,16 @@ import java.util.Random;
  */
 public class PokketUtil {
 
-    public static final String POKKET_WALLET_ADDRESS = null;
+    public static final String POKKET_BTC_WALLET_ADDRESS = null;
+    public static final String POKKET_ETH_WALLET_ADDRESS = null;
     public static final String MAKKII_WALLET_ADDRESS = null;
     /**
      * increase rate to determine whether return tusd.
      */
     public static final BigDecimal INCREASE_RATE = new BigDecimal(1.1);
     public static final String TUSD = "TUSD";
+    public static final String BTC = "BTC";
+    public static final String ETH = "ETH";
 
     /**
      * generate random order id for pokket purchase.

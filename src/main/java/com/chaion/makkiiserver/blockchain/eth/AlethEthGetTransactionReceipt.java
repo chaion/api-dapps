@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.blockchain;
+package com.chaion.makkiiserver.blockchain.eth;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
