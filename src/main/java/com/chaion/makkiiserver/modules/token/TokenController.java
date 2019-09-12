@@ -62,7 +62,7 @@ public class TokenController {
             @ApiParam(required=true, value="start index of tokens", example = "0")
             @RequestParam(value = "offset") int offset,
             @ApiParam(required=true, value="number of tokens to get", example = "20")
-            @RequestParam(value = "limit") int limit) {
+            @RequestParam(value = "size") int limit) {
         Pageable page = PageRequest.of(offset, limit);
         return aionRepo.findAll(page).getContent();
     }
@@ -178,7 +178,7 @@ public class TokenController {
             @ApiParam(required=true, value="start index of tokens", example = "0")
             @RequestParam(value = "offset") int offset,
             @ApiParam(required=true, value="number of tokens to get", example = "20")
-            @RequestParam(value = "limit") int limit) {
+            @RequestParam(value = "size") int limit) {
         Pageable page = PageRequest.of(offset, limit);
         if (keyword != null) {
             if (keyword.matches("^0x[0-9a-fA-F]{40}")) {

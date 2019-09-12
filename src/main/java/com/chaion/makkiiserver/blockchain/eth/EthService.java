@@ -355,7 +355,7 @@ public class EthService extends BaseBlockchain {
         try {
             receiptResp = ethWeb3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
         } catch (Exception e) {
-            logger.error("validate failed: getTransactionReceipt exception: ", e);
+            logger.error("validate failed: getTransactionReceipt exception: " + e.getMessage());
             return false;
         }
         logger.debug("receiptResp: " + receiptResp);

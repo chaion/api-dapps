@@ -14,12 +14,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.security.*;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -40,16 +42,17 @@ public class PokketService {
     @Autowired
     RestTemplate restClient;
 
+    private List<PokketProduct> cachedProductList = Collections.synchronizedList(new ArrayList<>());
+
     /**
      * pokket server base url
      */
     String baseUrl;
 
-    String pkFileName;
-
     private RsaProvider rsaProvider;
 
-    public PokketService(@Value("${pokket.server.pubkey}") String pkFileName, @Value("${pokket.server.baseurl}") String baseUrl) throws IOException {
+    public PokketService(@Value("${pokket.server.pubkey}") String pkFileName,
+                         @Value("${pokket.server.baseurl}") String baseUrl) throws IOException {
         logger.info("initialize pokket service: baseurl=" + baseUrl + ", pkFileName=" + pkFileName);
         this.baseUrl = baseUrl;
 
@@ -105,7 +108,8 @@ public class PokketService {
             logger.info("depositCipher:" + depositCipher);
             logger.info("keyHash:" + keyHash);
         } catch (Exception e) {
-            logger.error("encrypt/cipher order fail", e);
+            logger.error("encrypt/cipher order fail" + e.getMessage());
+            logger.debug("encrypt/cipher order fail:", e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "encrypt order failed.");
         }
 
@@ -119,21 +123,20 @@ public class PokketService {
         String url = baseUrl + "/deposit/deposit";
         ResponseEntity<String> response;
         try {
+            logger.info("calling pokket " + url);
              response = restClient.postForEntity(url, request, String.class);
-        } catch (Exception e) {
-            logger.info("response: " + e.getMessage());
-            throw e;
-        }
-        logger.info(response.toString());
-        if (response.getStatusCodeValue() != 200) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, url);
-        } else {
+            logger.info(response.toString());
             try {
-                return Long.parseLong(response.getBody());
+                return new JsonParser().parse(response.getBody()).getAsJsonObject().get("order_id").getAsLong();
             } catch (Exception e) {
-                // if
-                return -1l;
+                logger.error("parse response exception:" + e.getMessage());
+                logger.debug("parse response exception: ", e);
+                throw e;
             }
+        } catch (HttpStatusCodeException e) {
+            logger.error("create order exception: code:" + e.getRawStatusCode()
+                    + ",response text:" + e.getResponseBodyAsString());
+            throw e;
         }
     }
 
@@ -152,25 +155,30 @@ public class PokketService {
         HttpEntity request = new HttpEntity(map, headers);
 
         String url = baseUrl + "/products/search";
-        ResponseEntity<String> response = restClient.postForEntity(url, request, String.class);
-        if (response.getStatusCodeValue() == 200) {
+        try {
+            logger.info("calling " + url);
+            ResponseEntity<String> response = restClient.postForEntity(url, request, String.class);
             return parseToProductList(response.getBody());
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, url);
+        } catch (HttpStatusCodeException e) {
+            logger.error("search products exception: code:" + e.getRawStatusCode()
+                    + ",response text:" + e.getResponseBodyAsString());
+            throw e;
         }
     }
 
     /**
      * Get current product list
-     * @return
      */
     public List<PokketProduct> getProducts() {
         String url = baseUrl + "/products/list";
-        ResponseEntity<String> response = restClient.getForEntity(url, String.class);
-        if (response.getStatusCodeValue() == 200) {
+        try {
+            logger.info("calling " + url);
+            ResponseEntity<String> response = restClient.getForEntity(url, String.class);
             return parseToProductList(response.getBody());
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, url);
+        } catch (HttpStatusCodeException e) {
+            logger.error("get products exception: code:" + e.getRawStatusCode()
+                    + ",response text:" + e.getResponseBodyAsString());
+            throw e;
         }
     }
 
@@ -195,16 +203,20 @@ public class PokketService {
 
     /**
      * Get total pokket investment amount
+     *
      * @return
      */
     public BigDecimal getTotalInvestment() {
         String url = baseUrl + "/deposit/total_amount";
-        ResponseEntity<String> response = restClient.getForEntity(url, String.class);
-        if (response.getStatusCodeValue() == 200) {
+        try {
+            logger.info("calling " + url);
+            ResponseEntity<String> response = restClient.getForEntity(url, String.class);
             JsonObject obj = new JsonParser().parse(response.getBody()).getAsJsonObject();
             return obj.get("total_deposit_amount").getAsBigDecimal();
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, url);
+        } catch (HttpStatusCodeException e) {
+            logger.error("get total investment exception: code:" + e.getRawStatusCode()
+                    + ",response text:" + e.getResponseBodyAsString());
+            throw e;
         }
     }
 
@@ -222,12 +234,57 @@ public class PokketService {
         HttpEntity request = new HttpEntity(map, headers);
 
         String url = baseUrl + "/deposit/address";
-        ResponseEntity<String> response = restClient.postForEntity(url, request, String.class);
-        if (response.getStatusCodeValue() == 200) {
+        try {
+            logger.info("calling " + url);
+            ResponseEntity<String> response = restClient.postForEntity(url, request, String.class);
             JsonObject obj = new JsonParser().parse(response.getBody()).getAsJsonObject();
-            return obj.get("deposit_address").getAsString();
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, url);
+            String depositAddress = obj.get("deposit_address").getAsString();
+            String signature = obj.get("signature").getAsString();
+            try {
+                if (rsaProvider.verify(depositAddress, signature)) {
+                    return depositAddress;
+                } else {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "invalid signature.");
+                }
+            } catch (GeneralSecurityException e) {
+                logger.error("verify signature" + e.getMessage());
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to verify signature.");
+            }
+        } catch (HttpStatusCodeException e) {
+            logger.error("get deposit address exception: code:" + e.getRawStatusCode()
+                    + ",response text:" + e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    public void refreshProductList() {
+        try {
+            List<PokketProduct> products = getProducts();
+            cachedProductList.clear();
+            cachedProductList.addAll(products);
+        } catch (Exception e) {
+            logger.error("refresh product list exception: " + e.getMessage());
+        }
+    }
+
+    public List<PokketProduct> getCachedProductList() {
+        return cachedProductList;
+    }
+
+    public void validateProduct(Long productId, String token, BigDecimal amount) {
+        boolean productExist = false;
+        for (PokketProduct p : cachedProductList) {
+            if (p.getProductId().equals(productId)) {
+                productExist = true;
+                if (p.getToken().equalsIgnoreCase(token)) {
+                    if (p.getRemainingQuota().compareTo(amount) < 0) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PokketUtil.ERROR_CODE_EXCEED_QUOTA);
+                    }
+                }
+            }
+        }
+        if (!productExist) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PokketUtil.ERROR_CODE_PRODUCT_EXPIRE);
         }
     }
 }

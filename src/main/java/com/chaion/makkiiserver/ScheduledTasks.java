@@ -4,6 +4,8 @@ import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
 import com.chaion.makkiiserver.modules.coinmarket.ExchangePool;
+import com.chaion.makkiiserver.modules.pokket.PokketService;
+import com.chaion.makkiiserver.modules.token.EthTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,12 @@ public class ScheduledTasks {
     @Autowired
     private BtcService btcService;
 
+    @Autowired
+    private EthTokenRepository ethTokenRepo;
+
+    @Autowired
+    private PokketService pokketService;
+
     /**
      * Fetch currency rate every 30 minutes
      */
@@ -37,6 +45,7 @@ public class ScheduledTasks {
     public void fetchCurrencyRate() {
         logger.info("fetch currency rate");
 
+        logger.info("fetch coins...");
         for (String crypto : pool.getCryptoList()) {
             try{
                 Map<String,BigDecimal> prices = currencyService.fetchCurrency(crypto, pool.getFiatList());
@@ -61,5 +70,10 @@ public class ScheduledTasks {
     @Scheduled(fixedRate = 10 * 60 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();
+    }
+
+    @Scheduled(fixedRate = 10 * 1000)
+    public void refreshPokketProductList() {
+        pokketService.refreshProductList();
     }
 }

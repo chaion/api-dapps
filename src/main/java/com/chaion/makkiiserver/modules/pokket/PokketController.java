@@ -38,7 +38,10 @@ public class PokketController {
     BtcService btcService;
 
     @PutMapping("/order")
-    public PokketOrder createOrder(@Valid @RequestBody CreateOrderReq req) {
+    public PokketOrder createOrder(@RequestBody CreateOrderReq req) {
+        // validate product
+        pokketService.validateProduct(req.getProductId(), req.getToken(), req.getAmount());
+
         final String orderId = PokketUtil.generateOrderId();
         logger.info("[pokket] receive new order request, generate order id=" + orderId);
         long currentTime = System.currentTimeMillis();
@@ -313,7 +316,7 @@ public class PokketController {
     @GetMapping("/product")
     public List<PokketProduct> getProducts(@RequestParam(value="search", required = false) String search) {
         if (search == null || search.isEmpty()) {
-            return pokketService.getProducts();
+            return pokketService.getCachedProductList();
         } else {
             return pokketService.searchProducts(search);
         }
@@ -368,6 +371,15 @@ public class PokketController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Order(" + orderId + ") is not found.");
         }
         return orderOpt.get();
+    }
+
+    @GetMapping("orders")
+    public List<PokketOrder> getOrdersByPage(@RequestBody QueryOrderReq req) {
+        Long startTime = req.getStartTime();
+        Long endTime = req.getEndTime();
+        int page = req.getPage();
+        int size = req.getSize();
+        return repo.findByCreateTimeBetween(startTime, endTime, PageRequest.of(page, size));
     }
 
 }

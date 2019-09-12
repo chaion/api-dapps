@@ -21,6 +21,9 @@ public class PokketUtil {
     public static final String BTC = "BTC";
     public static final String ETH = "ETH";
 
+    public static final String ERROR_CODE_PRODUCT_EXPIRE = "pokket.product.expire";
+    public static final String ERROR_CODE_EXCEED_QUOTA = "pokket.product.exceed_quota";
+
     /**
      * generate random order id for pokket purchase.
      * order id format is: <timestamp>+<random 5 digits>

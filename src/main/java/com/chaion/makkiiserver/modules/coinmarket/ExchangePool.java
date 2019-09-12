@@ -34,7 +34,7 @@ public class ExchangePool {
         fiatList.add("ARS");
         fiatList.add("AMD");
         fiatList.add("AUD");
-        fiatList.add("AZN");
+//        fiatList.add("AZN");
         fiatList.add("BHD");
         fiatList.add("BDT");
         fiatList.add("BYN");

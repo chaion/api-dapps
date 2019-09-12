@@ -51,7 +51,7 @@ public class DAppsController {
     @GetMapping("/dappsByKeyword")
     public List<DApp> getDAppsByKeyword(@RequestParam(value = "keyword") String keyword,
                                @RequestParam(value = "offset") int offset,
-                               @RequestParam(value = "limit") int limit) {
+                               @RequestParam(value = "size") int limit) {
         return repo.findByKeyword(keyword, PageRequest.of(offset, limit));
     }
 
@@ -63,13 +63,13 @@ public class DAppsController {
     @GetMapping("/dappsByCategory")
     public List<DApp> getDAppsByCategory(@RequestParam(value = "category") Category category,
                                            @RequestParam(value = "offset") int offset,
-                                           @RequestParam(value = "limit") int limit) {
+                                           @RequestParam(value = "size") int limit) {
         return repo.findByCategory(category, PageRequest.of(offset, limit));
     }
 
     @GetMapping("/topDappsByCategories")
     public List<DApp> getTopDAppsByCategories(@RequestParam(value = "categories") String categories,
-                                              @RequestParam(value = "limit") int limit) {
+                                              @RequestParam(value = "size") int limit) {
         List<DApp> listOfDapp = new ArrayList<>();
         String[] categoriesArray = categories.split(",");
         // validate category list
