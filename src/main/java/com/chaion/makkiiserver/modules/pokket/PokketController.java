@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -118,18 +117,42 @@ public class PokketController {
     @PostMapping("/order/collateralSettlement")
     public void collateralSettlement(@RequestBody CollateralSettlementReq collateralSettlementReq) {
         List<PokketOrder> closedOrders = repo.findByOrderIdIn(collateralSettlementReq.getClosedOrderIds());
-        List<PokketOrder> newOrders = repo.findByOrderIdIn(collateralSettlementReq.getNewOrderIds());
+        BigDecimal totalWithdrawTUSD = calculateTotalReturnCollateral(closedOrders);
 
-        BigDecimal totalWithdrawTUSD = new BigDecimal("0");
-        // calculate collateral net
-        for (PokketOrder closedOrder : closedOrders) {
-            BigDecimal amount = closedOrder.getAmount();
-            BigDecimal token2Collateral = closedOrder.getToken2Collateral();
-            BigDecimal weeklyInterest = closedOrder.getWeeklyInterestRate();
-            BigDecimal tusd = calculateCollateral(amount, token2Collateral, weeklyInterest);
-            totalWithdrawTUSD.add(tusd);
+        List<PokketOrder> newOrders = repo.findByOrderIdIn(collateralSettlementReq.getNewOrderIds());
+        BigDecimal totalDepositTUSD = calculateTotalDepositCollateral(collateralSettlementReq, newOrders);
+
+        String transactionHash = collateralSettlementReq.getTransactionHash();
+        BigDecimal tusdTransfer = totalDepositTUSD.subtract(totalWithdrawTUSD);
+        if (tusdTransfer.signum() != 0) {
+            if (transactionHash == null) {
+                for (PokketOrder newOrder : newOrders) {
+                    newOrder.setStatus(PokketOrderStatus.ERROR);
+                    newOrder.setErrorMessage("collateral settlement request: " + collateralSettlementReq.toString() + ". "
+                            + tusdTransfer + " should transfer, but transaction hash is missing.");
+                    repo.save(newOrder);
+                }
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, tusdTransfer + " tusd should be transfered but transactionHash is missing.");
+            }
         }
-        logger.info("total withdraw tusd=" + totalWithdrawTUSD.toString());
+
+        if (tusdTransfer.signum() > 0) {
+            validateShouldDepositCollateral(newOrders, totalWithdrawTUSD, totalDepositTUSD, transactionHash, tusdTransfer);
+        } else if (tusdTransfer.signum() < 0) {
+            validateShouldReturnCollateral(newOrders, totalWithdrawTUSD, totalDepositTUSD, transactionHash, tusdTransfer);
+        } else {
+            logger.info("tusd withdraw and deposit are equal, no transaction required.");
+        }
+
+        for (PokketOrder newOrder : newOrders) {
+            newOrder.setStatus(PokketOrderStatus.IN_PROGRESS);
+            newOrder.setStartTime(System.currentTimeMillis());
+            repo.save(newOrder);
+        }
+    }
+
+    private BigDecimal calculateTotalDepositCollateral(@RequestBody CollateralSettlementReq collateralSettlementReq, List<PokketOrder> newOrders) {
+        logger.info("---- new orders ----");
         Map<String, BigDecimal> ratios = collateralSettlementReq.getToken2CollateralMap();
         BigDecimal totalDepositTUSD = new BigDecimal("0");
         for (PokketOrder newOrder : newOrders) {
@@ -139,54 +162,64 @@ public class PokketController {
             BigDecimal token2Collateral = newOrder.getToken2Collateral();
             BigDecimal weeklyInterest = newOrder.getWeeklyInterestRate();
             BigDecimal tusd = calculateCollateral(amount, token2Collateral, weeklyInterest);
-            totalDepositTUSD.add(tusd);
+            totalDepositTUSD = totalDepositTUSD.add(tusd);
+            logger.info(newOrder.getOrderId() + "(" + newOrder.getPokketOrderId() + "):amount=" + amount + ",tusd=" + tusd);
         }
         logger.info("total deposit tusd=" + totalDepositTUSD.toString());
-        String transactionHash = collateralSettlementReq.getTransactionHash();
-        // validate transaction
-        BigDecimal tusdTransfer = totalDepositTUSD.subtract(totalWithdrawTUSD);
-        if (tusdTransfer.signum() > 0) {
-            if (!ethService.validateERC20Transaction(transactionHash,
-                    POKKET_ETH_WALLET_ADDRESS,
-                    MAKKII_WALLET_ADDRESS,
-                    TUSD,
-                    tusdTransfer.abs()
-            )) {
-                for (PokketOrder order : newOrders) {
-                    order.setStatus(PokketOrderStatus.ERROR);
-                    order.setErrorMessage("invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
-                                + ", deposit tusd=" + totalDepositTUSD);
-                    repo.save(order);
-                }
+        return totalDepositTUSD;
+    }
 
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
-                                + ", deposit tusd=" + totalDepositTUSD);
-            }
-        } else if (tusdTransfer.signum() < 0) {
-            if (!ethService.validateERC20Transaction(transactionHash,
-                    MAKKII_WALLET_ADDRESS,
-                    POKKET_ETH_WALLET_ADDRESS,
-                    TUSD,
-                    tusdTransfer.abs())) {
-                for (PokketOrder order : newOrders) {
-                    order.setStatus(PokketOrderStatus.ERROR);
-                    order.setErrorMessage("invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
-                            + ", deposit tusd=" + totalDepositTUSD);
-                    repo.save(order);
-                }
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
-                                + ", deposit tusd=" + totalDepositTUSD);
-            }
-        } else {
-            logger.info("tusd withdraw and deposit are equal, no transaction required.");
+    private BigDecimal calculateTotalReturnCollateral(List<PokketOrder> closedOrders) {
+        BigDecimal totalWithdrawTUSD = new BigDecimal("0");
+        logger.info("---- closed orders ----");
+        // calculate collateral net
+        for (PokketOrder closedOrder : closedOrders) {
+            BigDecimal amount = closedOrder.getAmount();
+            BigDecimal token2Collateral = closedOrder.getToken2Collateral();
+            BigDecimal weeklyInterest = closedOrder.getWeeklyInterestRate();
+            BigDecimal tusd = calculateCollateral(amount, token2Collateral, weeklyInterest);
+            totalWithdrawTUSD = totalWithdrawTUSD.add(tusd);
+            logger.info(closedOrder.getOrderId() + "(" + closedOrder.getPokketOrderId() + "):amount=" + amount + ",tusd=" + tusd);
         }
+        logger.info("total withdraw tusd=" + totalWithdrawTUSD.toString());
+        return totalWithdrawTUSD;
+    }
 
-        for (PokketOrder newOrder : newOrders) {
-            newOrder.setStatus(PokketOrderStatus.IN_PROGRESS);
-            newOrder.setStartTime(System.currentTimeMillis());
-            repo.save(newOrder);
+    private void validateShouldReturnCollateral(List<PokketOrder> newOrders, BigDecimal totalWithdrawTUSD, BigDecimal totalDepositTUSD, String transactionHash, BigDecimal tusdTransfer) {
+        if (!ethService.validateERC20Transaction(transactionHash,
+                MAKKII_WALLET_ADDRESS,
+                POKKET_ETH_WALLET_ADDRESS,
+                TUSD,
+                tusdTransfer.abs())) {
+            for (PokketOrder order : newOrders) {
+                order.setStatus(PokketOrderStatus.ERROR);
+                order.setErrorMessage("invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
+                        + ", deposit tusd=" + totalDepositTUSD);
+                repo.save(order);
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
+                            + ", deposit tusd=" + totalDepositTUSD);
+        }
+    }
+
+    private void validateShouldDepositCollateral(List<PokketOrder> newOrders, BigDecimal totalWithdrawTUSD, BigDecimal totalDepositTUSD, String transactionHash, BigDecimal tusdTransfer) {
+        if (!ethService.validateERC20Transaction(transactionHash,
+                POKKET_ETH_WALLET_ADDRESS,
+                MAKKII_WALLET_ADDRESS,
+                TUSD,
+                tusdTransfer.abs()
+        )) {
+            for (PokketOrder order : newOrders) {
+                order.setStatus(PokketOrderStatus.ERROR);
+                order.setErrorMessage("invalid deposit tusd transaction hash=" + transactionHash + ": withdraw tusd=" + totalWithdrawTUSD
+                            + ", deposit tusd=" + totalDepositTUSD);
+                repo.save(order);
+            }
+
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "invalid deposit tusd transaction hash=" + transactionHash + ": withdraw tusd=" + totalWithdrawTUSD
+                            + ", deposit tusd=" + totalDepositTUSD);
         }
     }
 
@@ -315,29 +348,40 @@ public class PokketController {
     @ApiOperation(value="Get all financial products")
     @GetMapping("/product")
     public List<PokketProduct> getProducts(@RequestParam(value="search", required = false) String search) {
-        if (search == null || search.isEmpty()) {
-            return pokketService.getCachedProductList();
-        } else {
-            return pokketService.searchProducts(search);
-        }
+//        if (search == null || search.isEmpty()) {
+        return pokketService.getCachedProductList();
+//        } else {
+//        }
     }
 
     @ApiOperation(value="Get pokket's total deposit amount, including deposits on pokket's website")
     @GetMapping("/statistic/totalInvestment")
     public BigDecimal getTotalInvestment() {
-        return pokketService.getTotalInvestment();
+        try {
+            return pokketService.getTotalInvestment();
+        } catch (PokketClientException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @ApiOperation(value="Get pokket's Bitcoin address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/btc_address")
     public String getDepositBtcAddress() {
-        return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_BITCOIN);
+        try {
+            return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_BITCOIN);
+        } catch (PokketClientException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @ApiOperation(value="Get pokket's ethereum address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/eth_address")
     public String getDepositEthAddress() {
-        return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_ETH);
+        try {
+            return pokketService.getDepositAddress(PokketService.ADDRESS_TYPE_ETH);
+        } catch (PokketClientException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @ApiOperation(value="Get pokket financial banner images for advertisement use.",

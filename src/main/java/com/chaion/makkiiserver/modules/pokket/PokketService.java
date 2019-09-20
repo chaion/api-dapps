@@ -81,8 +81,9 @@ public class PokketService {
                                    BigDecimal amount,
                                    Long orderTime,
                                    String depositTransactionHash
-                                   ) {
+                                   ) throws PokketClientException {
         logger.info("pokket service: create order");
+
         JsonObject order = new JsonObject();
         order.addProperty("product_id", productId);
         order.addProperty("amount", amount);
@@ -110,7 +111,7 @@ public class PokketService {
         } catch (Exception e) {
             logger.error("encrypt/cipher order fail" + e.getMessage());
             logger.debug("encrypt/cipher order fail:", e);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "encrypt order failed.");
+            throw new PokketClientException("[pokket] encrypt order failed: " + e.getMessage());
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -124,19 +125,21 @@ public class PokketService {
         ResponseEntity<String> response;
         try {
             logger.info("calling pokket " + url);
-             response = restClient.postForEntity(url, request, String.class);
+
+            response = restClient.postForEntity(url, request, String.class);
             logger.info(response.toString());
             try {
                 return new JsonParser().parse(response.getBody()).getAsJsonObject().get("order_id").getAsLong();
             } catch (Exception e) {
                 logger.error("parse response exception:" + e.getMessage());
                 logger.debug("parse response exception: ", e);
-                throw e;
+                throw new PokketClientException("[pokket] parse order id failed: " + e.getMessage());
             }
         } catch (HttpStatusCodeException e) {
             logger.error("create order exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw e;
+            throw new PokketClientException("[pokket] deposit failed: " + e.getResponseBodyAsString(),
+                    e.getRawStatusCode());
         }
     }
 
@@ -147,7 +150,7 @@ public class PokketService {
      * @return
      */
     @Deprecated
-    public List<PokketProduct> searchProducts(String search) {
+    public List<PokketProduct> searchProducts(String search) throws PokketClientException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> map = new HashMap<>();
@@ -162,14 +165,15 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("search products exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw e;
+            throw new PokketClientException("[pokket] search products: " + e.getResponseBodyAsString(),
+                    e.getRawStatusCode());
         }
     }
 
     /**
      * Get current product list
      */
-    public List<PokketProduct> getProducts() {
+    public List<PokketProduct> getProducts() throws PokketClientException {
         String url = baseUrl + "/products/list";
         try {
             logger.info("calling " + url);
@@ -178,7 +182,8 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("get products exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw e;
+            throw new PokketClientException("[pokket] get products: "+ e.getResponseBodyAsString(),
+                    e.getRawStatusCode());
         }
     }
 
@@ -206,7 +211,7 @@ public class PokketService {
      *
      * @return
      */
-    public BigDecimal getTotalInvestment() {
+    public BigDecimal getTotalInvestment() throws PokketClientException {
         String url = baseUrl + "/deposit/total_amount";
         try {
             logger.info("calling " + url);
@@ -216,7 +221,8 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("get total investment exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw e;
+            throw new PokketClientException("[pokket] get total investment: " + e.getResponseBodyAsString(),
+                    e.getRawStatusCode());
         }
     }
 
@@ -226,7 +232,7 @@ public class PokketService {
      * @param type either ERC20 or Bitcoin
      * @return
      */
-    public String getDepositAddress(String type) {
+    public String getDepositAddress(String type) throws PokketClientException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> map = new HashMap<>();
@@ -244,20 +250,22 @@ public class PokketService {
                 if (rsaProvider.verify(depositAddress, signature)) {
                     return depositAddress;
                 } else {
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "invalid signature.");
+                    throw new PokketClientException("[pokket] deposit address responds with invalid signature.");
                 }
             } catch (GeneralSecurityException e) {
-                logger.error("verify signature" + e.getMessage());
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to verify signature.");
+                logger.error("verify signature failed: " + e.getMessage());
+                throw new PokketClientException("[pokket] deposit address failed to verify signature:" + e.getMessage());
             }
         } catch (HttpStatusCodeException e) {
             logger.error("get deposit address exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw e;
+            throw new PokketClientException("[pokket] get deposit address: " + e.getResponseBodyAsString(),
+                    e.getRawStatusCode());
         }
     }
 
     public void refreshProductList() {
+        logger.info("refresh pokket product list...");
         try {
             List<PokketProduct> products = getProducts();
             cachedProductList.clear();

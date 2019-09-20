@@ -129,6 +129,8 @@ public class JsonRpcController {
         jo.addProperty("value", transaction.getValue());
         jo.addProperty("txId", transaction.getHash());
         jo.addProperty("input", transaction.getInput());
+        jo.addProperty("from", transaction.getFrom());
+        jo.addProperty("to", transaction.getTo());
         return jo.toString();
     }
 }

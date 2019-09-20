@@ -36,8 +36,8 @@ public class HttpLogAdvice {
         try {
             return joinPoint.proceed();
         } catch (Throwable throwable) {
-            logger.error("throw: " + throwable.getMessage());
-            logger.error("Exception occurs in controller: ", throwable);
+            logger.error("exception: " + throwable.getMessage());
+            logger.debug("Exception occurs in controller: ", throwable);
             throw throwable;
         }
     }

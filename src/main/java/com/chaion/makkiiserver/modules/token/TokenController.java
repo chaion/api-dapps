@@ -1,5 +1,6 @@
 package com.chaion.makkiiserver.modules.token;
 
+import com.chaion.makkiiserver.blockchain.eth.PokketEthTokenProvider;
 import com.chaion.makkiiserver.exception.CodedErrorEnum;
 import com.chaion.makkiiserver.exception.CodedException;
 import com.chaion.makkiiserver.repository.file.StorageException;
@@ -41,6 +42,9 @@ public class TokenController {
 
     @Autowired
     EthTokenRepository ethRepo;
+
+    @Autowired
+    PokketEthTokenProvider pokketTokenProvider;
 
     @Autowired
     AionTokenRepository aionRepo;
@@ -179,38 +183,50 @@ public class TokenController {
             @RequestParam(value = "offset") int offset,
             @ApiParam(required=true, value="number of tokens to get", example = "20")
             @RequestParam(value = "size") int limit) {
-        Pageable page = PageRequest.of(offset, limit);
-        if (keyword != null) {
-            if (keyword.matches("^0x[0-9a-fA-F]{40}")) {
-                return ethRepo.findByContractAddress(keyword, page);
+//        if (appEnv.equalsIgnoreCase("pokket")) {
+//            return pokketTokenProvider.searchTokens(keyword);
+//        } else {
+            Pageable page = PageRequest.of(offset, limit);
+            if (keyword != null) {
+                if (keyword.matches("^0x[0-9a-fA-F]{40}")) {
+                    return ethRepo.findByContractAddress(keyword, page);
+                }
+                return ethRepo.findByName(keyword, page);
             }
-            return ethRepo.findByName(keyword, page);
-        }
-        return ethRepo.findAll(page).getContent();
+            return ethRepo.findAll(page).getContent();
+//        }
     }
 
     @GetMapping("/eth/popular")
     public List<EthToken> getEthPopularTokens() {
-        String[] pokketTokenSymbols = new String[] {
-                "DENT", "MTH", "WABI", "EVX", "FUEL", "SNM", "OAX",
-                "BRD", "OST", "ARN", "TNT", "AST", "CND", "EDO",
-                "ETHOS", "KNC", "ENJ", "RLC", "DLT", "APPC", "LRC",
-                "POLY", "OMG", "POWR", "MCO", "MKR", "STORJ", "LEO",
-                "BNT"
-        };
-        List<EthToken> popularTokens = ethRepo.findBySymbolIn(Arrays.asList(pokketTokenSymbols));
-        List<EthToken> topTokens = ethRepo.findAll(PageRequest.of(0, 20)).getContent();
-        for (EthToken token : topTokens) {
-            if (!popularTokens.contains(token)) {
-                popularTokens.add(token);
+//        if (appEnv.equalsIgnoreCase("pokket")) {
+//            return pokketTokenProvider.getTokens();
+//        } else {
+            String[] pokketTokenSymbols = new String[]{
+                    "DENT", "MTH", "WABI", "EVX", "FUEL", "SNM", "OAX",
+                    "BRD", "OST", "ARN", "TNT", "AST", "CND", "EDO",
+                    "ETHOS", "KNC", "ENJ", "RLC", "DLT", "APPC", "LRC",
+                    "POLY", "OMG", "POWR", "MCO", "MKR", "STORJ", "LEO",
+                    "BNT"
+            };
+            List<EthToken> popularTokens = ethRepo.findBySymbolIn(Arrays.asList(pokketTokenSymbols));
+            List<EthToken> topTokens = ethRepo.findAll(PageRequest.of(0, 20)).getContent();
+            for (EthToken token : topTokens) {
+                if (!popularTokens.contains(token)) {
+                    popularTokens.add(token);
+                }
             }
-        }
-        return popularTokens;
+            return popularTokens;
+//        }
     }
 
     @GetMapping("/eth/token_name")
     public List<EthToken> getEthTokenByTokenName(@RequestParam(value="token_name") String tokenName) {
-        return ethRepo.findBySymbol(tokenName);
+//        if (appEnv.equalsIgnoreCase("pokket")) {
+//            return pokketTokenProvider.getBySymbol(tokenName);
+//        } else {
+            return ethRepo.findBySymbol(tokenName);
+//        }
     }
 
     @ApiOperation(value="Get eth token icon")

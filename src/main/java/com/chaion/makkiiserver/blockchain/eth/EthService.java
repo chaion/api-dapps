@@ -37,6 +37,12 @@ public class EthService extends BaseBlockchain {
     @Autowired
     EthTokenRepository ethTokenRepo;
 
+    @Autowired
+    PokketEthTokenProvider pokketEthTokenProvider;
+
+    @Value("${app_env}")
+    String appEnv;
+
     private Web3j ethWeb3j;
 
     public EthService(@Value("${blockchain.eth.rpcinterface}") String rpcServerInterface,
@@ -283,7 +289,12 @@ public class EthService extends BaseBlockchain {
             logger.error("validate erc20 failed: from address is different: " + receipt.getFrom());
             return false;
         }
-        List<EthToken> ethTokens = ethTokenRepo.findBySymbol(token);
+        List<EthToken> ethTokens = null;
+        if (appEnv.equalsIgnoreCase("pokket")) {
+            ethTokens = pokketEthTokenProvider.getBySymbol(token);
+        } else {
+            ethTokens = ethTokenRepo.findBySymbol(token);
+        }
         boolean isToAddressCorrect = false;
         for (EthToken ethToken : ethTokens) {
             if (ethToken.getContractAddr().equalsIgnoreCase(receipt.getTo())) {
