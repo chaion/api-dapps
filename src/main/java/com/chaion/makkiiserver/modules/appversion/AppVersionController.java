@@ -6,17 +6,17 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Api(value="Version Management APIs", description="Operations pertaining to app version management")
 @RestController
+@RequestMapping("appVersion")
 public class AppVersionController {
     private static final Logger logger = LoggerFactory.getLogger(AppVersionController.class);
 
@@ -26,15 +26,16 @@ public class AppVersionController {
     @ApiOperation(value="Add a new app version",
             response=AppVersion.class,
             produces = "application/json")
-    @PutMapping(value="/appVersion")
+    @PutMapping
     public AppVersion addVersion(@RequestBody AppVersion version) {
+        version.setPlatform(version.getPlatform().toLowerCase());
         return repo.insert(version);
     }
 
     @ApiOperation(value="Update an existing app version",
             response=AppVersion.class,
             produces = "application/json")
-    @PostMapping(value="/appVersion")
+    @PostMapping
     public AppVersion updateVersion(@RequestBody AppVersion version) {
         Optional<AppVersion> optVersion = repo.findById(version.getId());
         if (optVersion.isPresent()) {
@@ -42,7 +43,7 @@ public class AppVersionController {
             appVersion.setVersion(version.getVersion());
             appVersion.setVersionCode(version.getVersionCode());
             appVersion.setUpdatesMap(version.getUpdatesMap());
-            appVersion.setPlatform(version.getPlatform());
+            appVersion.setPlatform(version.getPlatform().toLowerCase());
             appVersion.setMandatory(version.isMandatory());
             appVersion.setUrl(version.getUrl());
             return repo.save(appVersion);
@@ -54,7 +55,7 @@ public class AppVersionController {
             notes = "The returned version's mandatory is true if any version later than the given one is mandatory.",
             response=AppVersion.class,
             produces = "application/json")
-    @GetMapping(value="/appVersion/latest")
+    @GetMapping(value="latest")
     public AppVersion getAppVersion(
             @ApiParam(required = true, value = "current app version code which is an increased integer. " +
                     "versionCode in Android and Build number in iOS", example = "10")
@@ -95,5 +96,27 @@ public class AppVersionController {
         }
 
         return appVersion;
+    }
+
+    @ApiOperation(value = "get app version by page")
+    @GetMapping
+    public Page<AppVersion> getAppVersions(@RequestParam(value = "offset") int offset,
+                                           @RequestParam(value = "size") int limit,
+                                           @RequestParam(value = "platform", required = false) String platform) {
+        List<String> platforms;
+        if (platform != null) {
+            platforms = Arrays.asList(platform.toLowerCase().split(","));
+        } else {
+            platforms = new ArrayList<>();
+            platforms.add("android");
+            platforms.add("ios");
+        }
+        return repo.findByPlatformIn(platforms, PageRequest.of(offset, limit));
+    }
+
+    @ApiOperation(value = "delete app version by id")
+    @DeleteMapping
+    public void deleteAppVersions(@RequestParam(value = "id") String id) {
+        repo.deleteById(id);
     }
 }

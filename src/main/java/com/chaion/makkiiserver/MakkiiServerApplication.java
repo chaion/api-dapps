@@ -15,5 +15,4 @@ public class MakkiiServerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(MakkiiServerApplication.class, args);
 	}
-
 }

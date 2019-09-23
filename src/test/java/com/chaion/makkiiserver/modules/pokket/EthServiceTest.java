@@ -45,7 +45,7 @@ public class EthServiceTest {
         String to = "0x4be272f6ffcb20d7f427ae4a4583aa31e4a32a1c";
         String token = "DAI";
         BigDecimal amount = new BigDecimal("13.85715328");
-        Assert.assertTrue(ethService.validateERC20Transaction(txHash, from, to, token, amount));
+        Assert.assertTrue(ethService.validateERC20Transaction(txHash, from, to, token, amount, null));
     }
 
     @Test

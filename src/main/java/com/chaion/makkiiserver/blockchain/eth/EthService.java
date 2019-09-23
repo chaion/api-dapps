@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 @Service
 public class EthService extends BaseBlockchain {
@@ -262,7 +263,7 @@ public class EthService extends BaseBlockchain {
                                             String expectedFrom,
                                             String expectedTo,
                                             String token,
-                                            BigDecimal expectedAmount) {
+                                            BigDecimal expectedAmount, BiFunction<BigInteger, BigInteger, Boolean> amountValidator) {
         logger.info("validate erc20 transfer transaction[transactionHash=" + transactionHash +
                 ",from=" + expectedFrom +
                 ",to=" + expectedTo +
@@ -346,7 +347,8 @@ public class EthService extends BaseBlockchain {
                 return false;
             }
             BigInteger expectedAmountBI = expectedAmount.scaleByPowerOfTen(18).toBigInteger();
-            if (amount.getValue().compareTo(expectedAmountBI) != 0) {
+            if (!(amountValidator != null && amountValidator.apply(amount.getValue(), expectedAmountBI)) ||
+                    (amountValidator == null && amount.getValue().compareTo(expectedAmountBI) != 0)) {
                 logger.error("validate failed: expected amount is " + expectedAmountBI + ", actual amount is" + amount.getValue());
                 return false;
             }

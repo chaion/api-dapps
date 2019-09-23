@@ -16,7 +16,7 @@ public class PokketUtil {
     /**
      * increase rate to determine whether return tusd.
      */
-    public static final BigDecimal INCREASE_RATE = new BigDecimal(1.1);
+    public static final BigDecimal INCREASE_RATE = new BigDecimal("1.1");
     public static final String TUSD = "TUSD";
     public static final String BTC = "BTC";
     public static final String ETH = "ETH";
@@ -42,7 +42,7 @@ public class PokketUtil {
      * @return
      */
     public static BigDecimal calculateCollateral(BigDecimal amount, BigDecimal rate, BigDecimal weeklyInterest) {
-        return amount.multiply(INCREASE_RATE).add(amount.multiply(weeklyInterest)).multiply(rate);
+        return amount.multiply(INCREASE_RATE).add(amount.multiply(weeklyInterest.divide(new BigDecimal("100")))).multiply(rate);
     }
 
 }

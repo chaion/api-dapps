@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BaseBlockchain implements BlockchainService {
 
+
     /**
      * pending transaction list. scheduled task will check transactions' status.
      */

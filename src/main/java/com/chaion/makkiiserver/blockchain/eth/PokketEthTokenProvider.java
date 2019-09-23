@@ -10,6 +10,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This provider is to provide self-deployed token on pokket's private eth chain.
+ */
 @Service
 public class PokketEthTokenProvider {
 
@@ -17,6 +20,9 @@ public class PokketEthTokenProvider {
 
     private List<EthToken> tokens = new ArrayList<>();
 
+    /**
+     * read from token txt and load into token list.
+     */
     public PokketEthTokenProvider() throws IOException {
         ClassPathResource classPathResource = new ClassPathResource("pokket_tokens.txt");
 

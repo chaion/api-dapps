@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.BiFunction;
 
 import static com.chaion.makkiiserver.modules.pokket.PokketUtil.*;
 
@@ -190,7 +192,8 @@ public class PokketController {
                 MAKKII_WALLET_ADDRESS,
                 POKKET_ETH_WALLET_ADDRESS,
                 TUSD,
-                tusdTransfer.abs())) {
+                tusdTransfer.abs(),
+                (a1, a2) -> a1.compareTo(a2) <= 0)) {
             for (PokketOrder order : newOrders) {
                 order.setStatus(PokketOrderStatus.ERROR);
                 order.setErrorMessage("invalid deposit tusd transaction hash: withdraw tusd=" + totalWithdrawTUSD
@@ -208,7 +211,8 @@ public class PokketController {
                 POKKET_ETH_WALLET_ADDRESS,
                 MAKKII_WALLET_ADDRESS,
                 TUSD,
-                tusdTransfer.abs()
+                tusdTransfer.abs(),
+                (a1, a2) -> a1.compareTo(a2) >= 0
         )) {
             for (PokketOrder order : newOrders) {
                 order.setStatus(PokketOrderStatus.ERROR);
@@ -261,7 +265,12 @@ public class PokketController {
                 order.getWeeklyInterestRate());
         String expectedTo = order.getCollateralAddress() != null ? order.getCollateralAddress() : order.getInvestorAddress();
         // TODO: validate from/to
-        if (!ethService.validateERC20Transaction(txHashYieldTUSD, POKKET_ETH_WALLET_ADDRESS, null/*expectedTo*/, TUSD, expectedTUSD)) {
+        if (!ethService.validateERC20Transaction(txHashYieldTUSD,
+                POKKET_ETH_WALLET_ADDRESS,
+                null/*expectedTo*/,
+                TUSD,
+                expectedTUSD,
+                (a1, a2) -> a1.compareTo(a2) == 0)) {
             order.setStatus(PokketOrderStatus.ERROR);
             order.setErrorMessage("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
             logger.error("finish order(" + orderId + ") failed: Yield TUSD transaction(" + txHashYieldTUSD + ") is invalid");
@@ -286,7 +295,7 @@ public class PokketController {
             return false;
         }
 
-        BigDecimal expectedAmount = order.getAmount().multiply(order.getWeeklyInterestRate().add(new BigDecimal(1)));
+        BigDecimal expectedAmount = order.getAmount().multiply(order.getWeeklyInterestRate().divide(new BigDecimal("100")).add(new BigDecimal("1")));
         if (order.getToken().equalsIgnoreCase(BTC)) {
             if (!btcService.validateBtcTransaction(
                     txHashYieldToken,
@@ -309,7 +318,11 @@ public class PokketController {
             }
         } else {
             if (!ethService.validateERC20Transaction(txHashYieldToken,
-                    POKKET_ETH_WALLET_ADDRESS, null/*order.getInvestorAddress()*/, order.getToken(), expectedAmount)) {
+                    POKKET_ETH_WALLET_ADDRESS,
+                    null/*order.getInvestorAddress()*/,
+                    order.getToken(),
+                    expectedAmount,
+                    (a1, a2) -> a1.compareTo(a2) == 0)) {
                 order.setStatus(PokketOrderStatus.ERROR);
                 order.setErrorMessage("Finish Order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
                 logger.error("Finish Order(" + orderId + ") failed: Yield token transaction(" + txHashYieldToken + ") is invalid");
@@ -320,7 +333,12 @@ public class PokketController {
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(),
                 order.getToken2Collateral(),
                 order.getWeeklyInterestRate());
-        if (!ethService.validateERC20Transaction(txHashReturnTUSD, MAKKII_WALLET_ADDRESS, POKKET_ETH_WALLET_ADDRESS, TUSD, expectedTUSD)) {
+        if (!ethService.validateERC20Transaction(txHashReturnTUSD,
+                MAKKII_WALLET_ADDRESS,
+                POKKET_ETH_WALLET_ADDRESS,
+                TUSD,
+                expectedTUSD,
+                (a1, a2) -> a1.compareTo(a2) == 0)) {
             order.setStatus(PokketOrderStatus.ERROR);
             order.setErrorMessage("Finish order(" + orderId + ") failed: Return TUSD transaction(" + txHashReturnTUSD + ") is invalid");
             logger.error("Finish order(" + orderId + ") failed: Return TUSD transaction(" + txHashReturnTUSD + ") is invalid");
