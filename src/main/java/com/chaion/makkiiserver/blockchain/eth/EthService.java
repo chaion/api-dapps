@@ -1,6 +1,7 @@
 package com.chaion.makkiiserver.blockchain.eth;
 
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
+import com.chaion.makkiiserver.blockchain.BlockchainException;
 import com.chaion.makkiiserver.modules.token.EthToken;
 import com.chaion.makkiiserver.blockchain.TransactionStatus;
 import com.chaion.makkiiserver.modules.token.EthTokenRepository;
@@ -135,7 +136,7 @@ public class EthService extends BaseBlockchain {
             }
             Optional<PlainTransactionReceipt> receiptOpt = resp.getTransactionReceipt();
             if (!receiptOpt.isPresent()) {
-                throw new BlockchainException("receipt is not present");
+                return null;
             }
             return receiptOpt.get();
         } else {
@@ -150,7 +151,7 @@ public class EthService extends BaseBlockchain {
             }
             Optional<TransactionReceipt> receiptOpt = resp.getTransactionReceipt();
             if (!receiptOpt.isPresent()) {
-                throw new BlockchainException("receipt is not present");
+                return null;
             }
             return receiptOpt.get();
         }
@@ -241,6 +242,7 @@ public class EthService extends BaseBlockchain {
             // ignore exception
             return;
         }
+        if (receipt == null) return;
         if (receipt.isStatusOK()) {
             if (receipt instanceof PlainTransactionReceipt) {
                 logger.info("tx[" + txHash + "] confirmed ok, block number="

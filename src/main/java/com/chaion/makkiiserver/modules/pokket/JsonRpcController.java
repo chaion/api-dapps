@@ -1,6 +1,6 @@
 package com.chaion.makkiiserver.modules.pokket;
 
-import com.chaion.makkiiserver.blockchain.eth.BlockchainException;
+import com.chaion.makkiiserver.blockchain.BlockchainException;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.blockchain.eth.PlainTransactionReceipt;
 import com.google.gson.JsonArray;
@@ -94,6 +94,7 @@ public class JsonRpcController {
             JsonArray array = root.get("params").getAsJsonArray();
             String txHash = array.get(0).getAsString();
             TransactionReceipt receipt = ethService.getTransactionReceipt(txHash);
+            if (receipt == null) return null;
             PlainTransactionReceipt preceipt = (PlainTransactionReceipt) receipt;
             JsonObject result = new JsonObject();
             result.addProperty("transactionHash", preceipt.getTransactionHash());

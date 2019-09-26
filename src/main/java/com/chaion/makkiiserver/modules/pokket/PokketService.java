@@ -81,7 +81,7 @@ public class PokketService {
                                    BigDecimal amount,
                                    Long orderTime,
                                    String depositTransactionHash
-                                   ) throws PokketClientException {
+                                   ) throws PokketServiceException {
         logger.info("pokket service: create order");
 
         JsonObject order = new JsonObject();
@@ -111,7 +111,7 @@ public class PokketService {
         } catch (Exception e) {
             logger.error("encrypt/cipher order fail" + e.getMessage());
             logger.debug("encrypt/cipher order fail:", e);
-            throw new PokketClientException("[pokket] encrypt order failed: " + e.getMessage());
+            throw new PokketServiceException("[pokket] encrypt order failed: " + e.getMessage());
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -133,12 +133,12 @@ public class PokketService {
             } catch (Exception e) {
                 logger.error("parse response exception:" + e.getMessage());
                 logger.debug("parse response exception: ", e);
-                throw new PokketClientException("[pokket] parse order id failed: " + e.getMessage());
+                throw new PokketServiceException("[pokket] parse order id failed: " + e.getMessage());
             }
         } catch (HttpStatusCodeException e) {
             logger.error("create order exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw new PokketClientException("[pokket] deposit failed: " + e.getResponseBodyAsString(),
+            throw new PokketServiceException("[pokket] deposit failed: " + e.getResponseBodyAsString(),
                     e.getRawStatusCode());
         }
     }
@@ -150,7 +150,7 @@ public class PokketService {
      * @return
      */
     @Deprecated
-    public List<PokketProduct> searchProducts(String search) throws PokketClientException {
+    public List<PokketProduct> searchProducts(String search) throws PokketServiceException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> map = new HashMap<>();
@@ -165,7 +165,7 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("search products exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw new PokketClientException("[pokket] search products: " + e.getResponseBodyAsString(),
+            throw new PokketServiceException("[pokket] search products: " + e.getResponseBodyAsString(),
                     e.getRawStatusCode());
         }
     }
@@ -173,7 +173,7 @@ public class PokketService {
     /**
      * Get current product list
      */
-    public List<PokketProduct> getProducts() throws PokketClientException {
+    public List<PokketProduct> getProducts() throws PokketServiceException {
         String url = baseUrl + "/products/list";
         try {
             logger.info("calling " + url);
@@ -182,7 +182,7 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("get products exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw new PokketClientException("[pokket] get products: "+ e.getResponseBodyAsString(),
+            throw new PokketServiceException("[pokket] get products: "+ e.getResponseBodyAsString(),
                     e.getRawStatusCode());
         }
     }
@@ -211,7 +211,7 @@ public class PokketService {
      *
      * @return
      */
-    public BigDecimal getTotalInvestment() throws PokketClientException {
+    public BigDecimal getTotalInvestment() throws PokketServiceException {
         String url = baseUrl + "/deposit/total_amount";
         try {
             logger.info("calling " + url);
@@ -221,18 +221,18 @@ public class PokketService {
         } catch (HttpStatusCodeException e) {
             logger.error("get total investment exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw new PokketClientException("[pokket] get total investment: " + e.getResponseBodyAsString(),
+            throw new PokketServiceException("[pokket] get total investment: " + e.getResponseBodyAsString(),
                     e.getRawStatusCode());
         }
     }
 
     /**
-     * Get what addresses investors should transfer coins/tokens to.
+     * Get what investorAddresses investors should transfer coins/tokens to.
      *
      * @param type either ERC20 or Bitcoin
      * @return
      */
-    public String getDepositAddress(String type) throws PokketClientException {
+    public String getDepositAddress(String type) throws PokketServiceException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> map = new HashMap<>();
@@ -250,20 +250,23 @@ public class PokketService {
                 if (rsaProvider.verify(depositAddress, signature)) {
                     return depositAddress;
                 } else {
-                    throw new PokketClientException("[pokket] deposit address responds with invalid signature.");
+                    throw new PokketServiceException("[pokket] deposit address responds with invalid signature.");
                 }
             } catch (GeneralSecurityException e) {
                 logger.error("verify signature failed: " + e.getMessage());
-                throw new PokketClientException("[pokket] deposit address failed to verify signature:" + e.getMessage());
+                throw new PokketServiceException("[pokket] deposit address failed to verify signature:" + e.getMessage());
             }
         } catch (HttpStatusCodeException e) {
             logger.error("get deposit address exception: code:" + e.getRawStatusCode()
                     + ",response text:" + e.getResponseBodyAsString());
-            throw new PokketClientException("[pokket] get deposit address: " + e.getResponseBodyAsString(),
+            throw new PokketServiceException("[pokket] get deposit address: " + e.getResponseBodyAsString(),
                     e.getRawStatusCode());
         }
     }
 
+    /**
+     * Load pokket product list and save into cache.
+     */
     public void refreshProductList() {
         logger.info("refresh pokket product list...");
         try {
@@ -275,24 +278,38 @@ public class PokketService {
         }
     }
 
+    /**
+     * Get cached product list.
+     *
+     * @return
+     */
     public List<PokketProduct> getCachedProductList() {
         return cachedProductList;
     }
 
-    public void validateProduct(Long productId, String token, BigDecimal amount) {
+    /**
+     * validate product in new order.
+     * 1. product id should exist in latest product list.
+     * 2. invest amount < remaining quota.
+     *
+     * @param productId
+     * @param token
+     * @param amount
+     */
+    public void validateProduct(Long productId, String token, BigDecimal amount) throws PokketServiceException {
         boolean productExist = false;
         for (PokketProduct p : cachedProductList) {
             if (p.getProductId().equals(productId)) {
                 productExist = true;
                 if (p.getToken().equalsIgnoreCase(token)) {
                     if (p.getRemainingQuota().compareTo(amount) < 0) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PokketUtil.ERROR_CODE_EXCEED_QUOTA);
+                        throw new PokketServiceException(PokketUtil.ERROR_CODE_EXCEED_QUOTA);
                     }
                 }
             }
         }
         if (!productExist) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PokketUtil.ERROR_CODE_PRODUCT_EXPIRE);
+            throw new PokketServiceException(PokketUtil.ERROR_CODE_PRODUCT_EXPIRE);
         }
     }
 }

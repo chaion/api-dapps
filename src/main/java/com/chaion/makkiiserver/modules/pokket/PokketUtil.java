@@ -21,7 +21,7 @@ public class PokketUtil {
     public static final String BTC = "BTC";
     public static final String ETH = "ETH";
 
-    public static final String ERROR_CODE_PRODUCT_EXPIRE = "pokket.product.expire";
+    public static final String ERROR_CODE_PRODUCT_EXPIRE = "pokket.product_list.expire";
     public static final String ERROR_CODE_EXCEED_QUOTA = "pokket.product.exceed_quota";
 
     /**
@@ -43,6 +43,17 @@ public class PokketUtil {
      */
     public static BigDecimal calculateCollateral(BigDecimal amount, BigDecimal rate, BigDecimal weeklyInterest) {
         return amount.multiply(INCREASE_RATE).add(amount.multiply(weeklyInterest.divide(new BigDecimal("100")))).multiply(rate);
+    }
+
+    /**
+     * calculate token profit
+     *
+     * @param amount
+     * @param weeklyInterest
+     * @return
+     */
+    public static BigDecimal calculateProfit(BigDecimal amount, BigDecimal weeklyInterest) {
+        return amount.multiply(weeklyInterest.divide(new BigDecimal("100")).add(new BigDecimal("1")));
     }
 
 }

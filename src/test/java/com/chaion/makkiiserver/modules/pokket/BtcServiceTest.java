@@ -1,5 +1,6 @@
 package com.chaion.makkiiserver.modules.pokket;
 
+import com.chaion.makkiiserver.blockchain.BlockchainException;
 import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.btc.BtcTransaction;
 import org.junit.Test;
@@ -16,7 +17,7 @@ public class BtcServiceTest {
     BtcService btcService;
 
     @Test
-    public void getTx() {
+    public void getTx() throws BlockchainException {
         BtcTransaction tx = btcService.getTransaction("56f522990775e8c02f3d33a943e6004c4fe40f856eeb3c0a4fdf34312dec56bd");
         System.out.println(tx);
     }

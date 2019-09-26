@@ -28,7 +28,7 @@ public class AnalyticsController {
     @GetMapping("/register_users")
     public UserInfo getRegisteredUsers(
             @RequestParam(value="startTime") Long from,
-            @RequestParam(value="endTime") Long to) {
+            @RequestParam(value="toTime") Long to) {
         Map<String, Long> platformCounts = new HashMap<String, Long>();
         platformCounts.put(AppPlatform.ANDROID.name(), 0L);
         platformCounts.put(AppPlatform.IOS.name(), 0L);
@@ -58,7 +58,7 @@ public class AnalyticsController {
     @ApiOperation(value="get transfer statistics in the specified time period")
     @GetMapping("/transfers")
     public TransferInfo getTransfers(@RequestParam(value="startTime") Long from,
-                                     @RequestParam(value="endTime") Long to) {
+                                     @RequestParam(value="toTime") Long to) {
         List<EventLog> list = eventlogRepo.findEventsByTimeRange(EventLog.EVENT_TRANSFER, from, to);
         TransferInfo transferInfo = new TransferInfo();
         transferInfo.setStartTime(from);

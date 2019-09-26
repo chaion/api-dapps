@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.blockchain.eth;
+package com.chaion.makkiiserver.blockchain;
 
 /**
  * Blockchain exception

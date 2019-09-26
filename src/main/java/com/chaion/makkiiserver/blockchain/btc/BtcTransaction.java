@@ -90,7 +90,7 @@ public class BtcTransaction {
             scriptPubKey.setHex(joScriptPubKey.get("hex").getAsString());
             scriptPubKey.setAsm(joScriptPubKey.get("asm").getAsString());
             scriptPubKey.setType(joScriptPubKey.get("type").getAsString());
-            JsonArray addressArray = joScriptPubKey.get("addresses").getAsJsonArray();
+            JsonArray addressArray = joScriptPubKey.get("investorAddresses").getAsJsonArray();
             List<String> addresses = new ArrayList<>();
             scriptPubKey.setAddresses(addresses);
             for (int j = 0; j < addressArray.size(); j++) {

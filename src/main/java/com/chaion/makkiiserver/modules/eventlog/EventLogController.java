@@ -28,6 +28,7 @@ public class EventLogController {
         return eventlogRepo.insert(eventLog);
     }
 
+    @ApiOperation(value = "get event logs")
     @GetMapping
     public Page<EventLog> getEventLogs(@RequestParam(value = "offset") int offset,
                                        @RequestParam(value = "size") int limit,

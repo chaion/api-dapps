@@ -55,4 +55,6 @@ public class PokketOrder {
     private String previousOrderId;
     @ApiModelProperty(value = "订单出错信息")
     private String errorMessage;
+
+
 }

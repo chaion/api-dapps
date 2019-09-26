@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PokketOrderRepository extends MongoRepository<PokketOrder, String> {
+public interface PokketOrderRepository extends MongoRepository<PokketOrder, String>, PokketOrderRepositoryCustom {
 
     Page<PokketOrder> findByInvestorAddressInAndStatusIsNot(List<String> addresses,
                                                             PokketOrderStatus status,
@@ -19,5 +19,4 @@ public interface PokketOrderRepository extends MongoRepository<PokketOrder, Stri
 
     List<PokketOrder> findByOrderIdIn(List<String> pokketOrderIds);
 
-    List<PokketOrder> findByCreateTimeBetween(Long startTime, Long endTime, Pageable page);
 }

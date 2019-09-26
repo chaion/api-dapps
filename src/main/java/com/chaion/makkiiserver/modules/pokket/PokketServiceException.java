@@ -1,16 +1,19 @@
 package com.chaion.makkiiserver.modules.pokket;
 
-public class PokketClientException extends Exception {
+public class PokketServiceException extends Exception {
 
+    /**
+     * this status code represents http response status code from pokket server.
+     */
     private Integer statusCode;
 
     private String message;
 
-    public PokketClientException(String message) {
+    public PokketServiceException(String message) {
         super(message);
     }
 
-    public PokketClientException(String message, Integer code) {
+    public PokketServiceException(String message, Integer code) {
         this.statusCode = code;
         this.message = message;
     }
