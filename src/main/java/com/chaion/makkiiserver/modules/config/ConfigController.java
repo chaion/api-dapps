@@ -36,6 +36,11 @@ public class ConfigController {
         repo.save(config);
     }
 
+    @GetMapping("/modules")
+    public List<ModuleConfig> getModules() {
+        return repo.findAll();
+    }
+
     @ApiOperation(value="Load default configurations", response=DefaultConfig.class)
     @GetMapping
     public DefaultConfig getDefaultConfig() {

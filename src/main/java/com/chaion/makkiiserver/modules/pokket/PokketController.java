@@ -44,7 +44,7 @@ public class PokketController {
         } catch (PokketServiceException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-        logger.info("[pokket] validate new order(productId=%s,token=%s,amount=%s passed.",
+        logger.info("[pokket] validate new order(productId={},token={},amount={}) passed.",
                 req.getProductId(), req.getToken(), req.getAmount());
 
         final String orderId = PokketUtil.generateOrderId();
@@ -61,9 +61,9 @@ public class PokketController {
                 blockchain = ethService;
             }
             txId = blockchain.sendRawTransaction(rawTransaction);
-            logger.info("[pokket][" + req.getToken() + "] sending invest raw transaction %s", txId);
+            logger.info("[pokket][{}] sending invest raw transaction {}", req.getToken(), txId);
             watchInvestTx(req, orderId, currentTime, txId, blockchain);
-            logger.info("[pokket] add tx %s to pending queue, wait confirmation.", txId);
+            logger.info("[pokket] add tx {} to pending queue, wait confirmation.", txId);
         } catch (BlockchainException e) {
             logger.error("[pokket] send invest raw transaction exception: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid rawTransaction");
@@ -98,7 +98,7 @@ public class PokketController {
         blockchain.addPendingTransaction(txId, (transactionHash, status) -> {
             PokketOrder order = getOrder(orderId);
             if (status) {
-                logger.info(String.format("[pokket] invest transaction %s is confirmed as success" ,txId));
+                logger.info("[pokket] invest transaction {} is confirmed as success", txId);
                 Long pokketOrderId = null;
                 try {
                     pokketOrderId = pokketService.createOrder(orderId,
@@ -181,8 +181,8 @@ public class PokketController {
             BigDecimal tusd = calculateCollateral(amount, token2Collateral, weeklyInterest);
             totalDepositTUSD = totalDepositTUSD.add(tusd);
             logger.info(order.getOrderId() + "(" + order.getPokketOrderId() + "):amount=" + amount + ",tusd=" + tusd);
-            logger.info(String.format("newOrder(%s,pokket order id=%s) amount=%s,tusd=%s",
-                    order.getOrderId(), order.getPokketOrderId()), amount, tusd);
+            logger.info("newOrder({},pokket order id={}) amount={},tusd={}",
+                    order.getOrderId(), order.getPokketOrderId(), amount, tusd);
         }
         logger.info("should total deposit collateral is " + totalDepositTUSD.toString());
         return totalDepositTUSD;
@@ -204,8 +204,8 @@ public class PokketController {
             BigDecimal weeklyInterest = order.getWeeklyInterestRate();
             BigDecimal tusd = calculateCollateral(amount, token2Collateral, weeklyInterest);
             totalWithdrawTUSD = totalWithdrawTUSD.add(tusd);
-            logger.info(String.format("closeOrder(%s,pokket order id=%s) amount=%s,tusd=%s",
-                    order.getOrderId(), order.getPokketOrderId()), amount, tusd);
+            logger.info("closeOrder({},pokket order id={}) amount={},tusd={}",
+                    order.getOrderId(), order.getPokketOrderId(), amount, tusd);
         }
         logger.info("should total withdraw tusd is " + totalWithdrawTUSD.toString());
         return totalWithdrawTUSD;

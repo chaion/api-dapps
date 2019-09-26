@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.chaion.makkiiserver</groupId>
-	<artifactId>frontend</artifactId>
+	<artifactId>makkiiserver</artifactId>
 	<version>1.1.0-SNAPSHOT</version>
 	<name>MakkiiServer</name>
 

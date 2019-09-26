@@ -1,6 +1,5 @@
 package com.chaion.makkiiserver.modules.pokket.model;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.springframework.data.annotation.Id;

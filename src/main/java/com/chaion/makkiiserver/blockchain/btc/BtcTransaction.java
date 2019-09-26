@@ -1,6 +1,9 @@
 package com.chaion.makkiiserver.blockchain.btc;
 
+import com.chaion.makkiiserver.SafeGson;
+import com.chaion.makkiiserver.Utils;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Data;
@@ -29,74 +32,104 @@ public class BtcTransaction {
 
     public static BtcTransaction fromJson(JsonObject root) {
         BtcTransaction tx = new BtcTransaction();
-        String txid = root.get("txid").getAsString();
+        String txid = SafeGson.getJsonStringValue(root, "txid");
         tx.setTxId(txid);
-        int version = root.get("version").getAsInt();
+        int version = SafeGson.getJsonIntValue(root, "version");
         tx.setVersion(version);
-        long locktime = root.get("locktime").getAsLong();
+        long locktime = SafeGson.getJsonLongValue(root, "locktime");
         tx.setLocktime(locktime);
-        String blockhash = root.get("blockhash").getAsString();
+        String blockhash = SafeGson.getJsonStringValue(root, "blockhash");
         tx.setBlockHash(blockhash);
-        BigInteger blockheight = root.get("blockheight").getAsBigInteger();
+        BigInteger blockheight = SafeGson.getJsonBigIntegerValue(root, "blockheight");
         tx.setBlockHeight(blockheight);
-        BigInteger confirmations = root.get("confirmations").getAsBigInteger();
+        BigInteger confirmations = SafeGson.getJsonBigIntegerValue(root, "confirmations");
         tx.setConfirmations(confirmations);
-        long time = root.get("time").getAsLong();
+        long time = SafeGson.getJsonLongValue(root, "time");
         tx.setTime(time);
-        long blocktime = root.get("blocktime").getAsLong();
+        long blocktime = SafeGson.getJsonLongValue(root, "blocktime");
         tx.setBlocktime(blocktime);
-        BigDecimal valueOut = root.get("valueOut").getAsBigDecimal();
+        BigDecimal valueOut = SafeGson.getJsonBigDecimalValue(root, "valueOut");
         tx.setValueOut(valueOut);
-        int size = root.get("size").getAsInt();
+        int size = SafeGson.getJsonIntValue(root, "size");
         tx.setSize(size);
-        BigDecimal valueIn = root.get("valueIn").getAsBigDecimal();
+        BigDecimal valueIn = SafeGson.getJsonBigDecimalValue(root, "valueIn");
         tx.setValueIn(valueIn);
-        BigDecimal fees = root.get("fees").getAsBigDecimal();
+        BigDecimal fees = SafeGson.getJsonBigDecimalValue(root, "fees");
         tx.setFees(fees);
         List<BtcTxVin> vins = new ArrayList<>();
         tx.setVin(vins);
-        JsonArray vinArray = root.get("vin").getAsJsonArray();
-        for (int i = 0; i < vinArray.size(); i++) {
-            JsonObject jsIn = vinArray.get(i).getAsJsonObject();
-            BtcTxVin vin = new BtcTxVin();
-            vin.setTxId(jsIn.get("txid").getAsString());
-            vin.setVout(jsIn.get("vout").getAsLong());
-            vin.setSequence(jsIn.get("sequence").getAsLong());
-            vin.setN(jsIn.get("n").getAsInt());
-            vin.setAddr(jsIn.get("addr").getAsString());
-            vin.setValueSat(jsIn.get("valueSat").getAsBigInteger());
-            vin.setValue(jsIn.get("value").getAsBigDecimal());
-            vin.setDoubleSpentTxId(jsIn.get("doubleSpentTxID").getAsString());
-            JsonObject joScriptSig = jsIn.get("scriptSig").getAsJsonObject();
-            BtcTxScriptSig scriptSig = new BtcTxScriptSig();
-            scriptSig.setHex(joScriptSig.get("hex").getAsString());
-            scriptSig.setAsm(joScriptSig.get("asm").getAsString());
-            vin.setScriptSig(scriptSig);
-            vins.add(vin);
-        }
-        List<BtcTxVout> vouts = new ArrayList<>();
-        tx.setVout(vouts);
-        JsonArray voutArray = root.get("vout").getAsJsonArray();
-        for (int i = 0; i < voutArray.size(); i++) {
-            JsonObject jsOut = voutArray.get(i).getAsJsonObject();
-            BtcTxVout vout = new BtcTxVout();
-            vout.setValue(jsOut.get("value").getAsString());
-            vout.setN(jsOut.get("n").getAsInt());
-            vout.setSpentTxId(jsOut.get("spentTxId").getAsString());
-            vout.setSpentIndex(jsOut.get("spentIndex").getAsBigInteger());
-            vout.setSpentHeight(jsOut.get("spentHeight").getAsBigInteger());
-            JsonObject joScriptPubKey = jsOut.get("scriptPubKey").getAsJsonObject();
-            BtcTxScriptPubKey scriptPubKey = new BtcTxScriptPubKey();
-            scriptPubKey.setHex(joScriptPubKey.get("hex").getAsString());
-            scriptPubKey.setAsm(joScriptPubKey.get("asm").getAsString());
-            scriptPubKey.setType(joScriptPubKey.get("type").getAsString());
-            JsonArray addressArray = joScriptPubKey.get("investorAddresses").getAsJsonArray();
-            List<String> addresses = new ArrayList<>();
-            scriptPubKey.setAddresses(addresses);
-            for (int j = 0; j < addressArray.size(); j++) {
-                addresses.add(addressArray.get(j).getAsString());
+        if (root.has("vin")) {
+            JsonElement jeVin = root.get("vin");
+            if (jeVin.isJsonArray()) {
+                JsonArray vinArray = jeVin.getAsJsonArray();
+                for (int i = 0; i < vinArray.size(); i++) {
+                    if (vinArray.get(i).isJsonObject()) {
+                        if (vinArray.get(i).isJsonObject()) {
+                            JsonObject jsIn = vinArray.get(i).getAsJsonObject();
+                            BtcTxVin vin = new BtcTxVin();
+                            vin.setTxId(SafeGson.getJsonStringValue(jsIn, "txid"));
+                            vin.setVout(SafeGson.getJsonLongValue(jsIn, "vout"));
+                            vin.setSequence(SafeGson.getJsonLongValue(jsIn, "sequence"));
+                            vin.setN(SafeGson.getJsonIntValue(jsIn, "n"));
+                            vin.setAddr(SafeGson.getJsonStringValue(jsIn, "addr"));
+                            vin.setValueSat(SafeGson.getJsonBigIntegerValue(jsIn, "valueSat"));
+                            vin.setValue(SafeGson.getJsonBigDecimalValue(jsIn, "value"));
+                            vin.setDoubleSpentTxId(SafeGson.getJsonStringValue(jsIn, "doubleSpentTxID"));
+                            if (jsIn.has("scriptSig")) {
+                                if (jsIn.get("scriptSig").isJsonObject()) {
+                                    JsonObject joScriptSig = jsIn.get("scriptSig").getAsJsonObject();
+                                    BtcTxScriptSig scriptSig = new BtcTxScriptSig();
+                                    scriptSig.setHex(joScriptSig.get("hex").getAsString());
+                                    scriptSig.setAsm(joScriptSig.get("asm").getAsString());
+                                    vin.setScriptSig(scriptSig);
+                                }
+                            }
+                            vins.add(vin);
+                        }
+                    }
+                }
             }
-            vouts.add(vout);
+        }
+        if (root.has("vout")) {
+            JsonElement jeVout = root.get("vout");
+            if (jeVout.isJsonArray()) {
+                List<BtcTxVout> vouts = new ArrayList<>();
+                tx.setVout(vouts);
+                JsonArray voutArray = jeVout.getAsJsonArray();
+                for (int i = 0; i < voutArray.size(); i++) {
+                    if (voutArray.get(i).isJsonObject()) {
+                        JsonObject jsOut = voutArray.get(i).getAsJsonObject();
+                        BtcTxVout vout = new BtcTxVout();
+                        vout.setValue(SafeGson.getJsonStringValue(jsOut, "value"));
+                        vout.setN(SafeGson.getJsonIntValue(jsOut, "n"));
+                        vout.setSpentTxId(SafeGson.getJsonStringValue(jsOut, "spentTxId"));
+                        vout.setSpentIndex(SafeGson.getJsonBigIntegerValue(jsOut, "spentIndex"));
+                        vout.setSpentHeight(SafeGson.getJsonBigIntegerValue(jsOut, "spentHeight"));
+                        if (jsOut.has("scriptPubKey")) {
+                            if (jsOut.get("scriptPubKey").isJsonObject()) {
+                                JsonObject joScriptPubKey = jsOut.get("scriptPubKey").getAsJsonObject();
+                                BtcTxScriptPubKey scriptPubKey = new BtcTxScriptPubKey();
+                                scriptPubKey.setHex(SafeGson.getJsonStringValue(joScriptPubKey, "hex"));
+                                scriptPubKey.setAsm(SafeGson.getJsonStringValue(joScriptPubKey, "asm"));
+                                scriptPubKey.setType(SafeGson.getJsonStringValue(joScriptPubKey, "type"));
+                                if (joScriptPubKey.has("investorAddresses")) {
+                                    if (joScriptPubKey.get("investorAddresses").isJsonArray()) {
+                                        JsonArray addressArray = joScriptPubKey.get("investorAddresses").getAsJsonArray();
+                                        List<String> addresses = new ArrayList<>();
+                                        scriptPubKey.setAddresses(addresses);
+                                        for (int j = 0; j < addressArray.size(); j++) {
+                                            if (addressArray.get(j).isJsonPrimitive()) {
+                                                addresses.add(addressArray.get(j).getAsString());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        vouts.add(vout);
+                    }
+                }
+            }
         }
         return tx;
     }
