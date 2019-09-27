@@ -3,9 +3,15 @@ package com.chaion.makkiiserver.modules.pokket;
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
 import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.modules.config.ModuleConfig;
+import com.chaion.makkiiserver.modules.config.ModuleConfigRepository;
 import com.chaion.makkiiserver.modules.pokket.model.*;
 import com.chaion.makkiiserver.modules.pokket.repository.PokketOrderRepository;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
+import com.chaion.makkiiserver.repository.file.StorageService;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -30,12 +36,16 @@ public class PokketController {
 
     private static final Logger logger = LoggerFactory.getLogger(PokketController.class);
 
-    @Autowired PokketOrderRepository repo;
+    @Autowired
+    PokketOrderRepository repo;
     @Autowired
     PokketService pokketService;
-    @Autowired EthService ethService;
+    @Autowired
+    EthService ethService;
     @Autowired
     BtcService btcService;
+    @Autowired
+    ModuleConfigRepository moduleRepo;
 
     @PutMapping("/order")
     public PokketOrder createOrder(@RequestBody CreateOrderReq req) {
@@ -493,16 +503,18 @@ public class PokketController {
     @GetMapping("/banners")
     public List<Banner> getBanners() {
         List<Banner> banners = new ArrayList<>();
-
-        Banner b1 = new Banner();
-        b1.setImageUrl("http://45.118.132.89/banner1.png");
-        b1.setLink("https://h5.beekuaibao.com/#/detail?id=592983513578475520");
-        banners.add(b1);
-
-        Banner b2 = new Banner();
-        b2.setImageUrl("http://45.118.132.89/banner2.png");
-        b2.setLink(null);
-        banners.add(b2);
+        ModuleConfig config = moduleRepo.findFirstByModuleNameIgnoreCase("Pokket");
+        Map<String, String> params = config.getModuleParams();
+        if (params.containsKey("banners")) {
+            JsonArray bannerArray = new JsonParser().parse(params.get("banners")).getAsJsonArray();
+            for (int i = 0; i < bannerArray.size(); i++) {
+                JsonObject joBanner = bannerArray.get(i).getAsJsonObject();
+                Banner banner = new Banner();
+                banner.setImageUrl(joBanner.get("banner_url").getAsString());
+                banner.setLink(joBanner.get("banner_link").getAsString());
+                banners.add(banner);
+            }
+        }
 
         return banners;
     }

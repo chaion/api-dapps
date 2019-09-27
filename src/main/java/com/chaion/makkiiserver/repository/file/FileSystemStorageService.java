@@ -53,6 +53,25 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
+    public Path store(MultipartFile file, String targetFilename) throws StorageException {
+        try {
+            if (targetFilename.contains("..")) {
+                throw new StorageException("Cannot store file with relative path outside current directory " +
+                        targetFilename);
+            }
+            try (InputStream inputStream = file.getInputStream()) {
+                Path targetPath = this.rootLocation.resolve(targetFilename);
+                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                logger.info(file.getName() + " was saved to " + targetPath.toAbsolutePath());
+
+                return targetPath;
+            }
+        } catch (IOException e) {
+            throw new StorageException("Failed to store file " + file.getName(), e);
+        }
+    }
+
+    @Override
     public Path store(File file) throws StorageException {
         try {
             if (file.length() <= 0) {

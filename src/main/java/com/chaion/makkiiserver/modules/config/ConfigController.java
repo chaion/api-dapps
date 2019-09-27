@@ -1,5 +1,11 @@
 package com.chaion.makkiiserver.modules.config;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +42,35 @@ public class ConfigController {
         repo.save(config);
     }
 
-    @GetMapping("/modules")
-    public List<ModuleConfig> getModules() {
-        return repo.findAll();
+    @GetMapping(value = "/modules", produces = "application/json; charset=utf-8")
+    public String getModules() {
+        JsonArray modules = new JsonArray();
+        List<ModuleConfig> configs = repo.findAll();
+        for (ModuleConfig config : configs) {
+            JsonObject module = new JsonObject();
+            module.addProperty("moduleId", config.getModuleId());
+            module.addProperty("moduleName", config.getModuleName());
+            module.addProperty("enabled", config.isEnabled());
+            Map<String, String> map = config.getModuleParams();
+            if (map != null) {
+                JsonObject params = new JsonObject();
+                module.add("moduleParams", params);
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    try {
+                        JsonElement e = new JsonParser().parse(entry.getValue());
+                        if (e.isJsonObject() || e.isJsonArray()) {
+                            params.add(entry.getKey(), e);
+                        } else {
+                            params.addProperty(entry.getKey(), entry.getValue());
+                        }
+                    } catch (Exception e) {
+                        params.addProperty(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            modules.add(module);
+        }
+        return modules.toString();
     }
 
     @ApiOperation(value="Load default configurations", response=DefaultConfig.class)

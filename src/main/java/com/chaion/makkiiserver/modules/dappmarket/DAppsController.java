@@ -233,7 +233,7 @@ public class DAppsController {
         }
     }
 
-    @GetMapping("/files/{filename:.+}")
+    @GetMapping("/testfiles/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
         Resource file = null;
