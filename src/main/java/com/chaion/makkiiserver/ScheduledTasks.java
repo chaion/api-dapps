@@ -62,17 +62,17 @@ public class ScheduledTasks {
     /**
      * check pending transaction status every 10 seconds
      */
-    @Scheduled(fixedRate = 10 * 1000)
+//    @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingEthTxStatus() {
         ethService.checkPendingTxStatus();
     }
 
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+//    @Scheduled(fixedRate = 10 * 60 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();
     }
 
-    @Scheduled(fixedRate = 10 * 1000)
+//    @Scheduled(fixedRate = 10 * 1000)
     public void refreshPokketProductList() {
         pokketService.refreshProductList();
     }
