@@ -1,7 +1,6 @@
 package com.chaion.makkiiserver.modules.pokket.model;
 
 public enum PokketOrderStatus {
-    ERROR,
     /**
      * after investor sends transaction, and wait for transaction to confirm.
      */

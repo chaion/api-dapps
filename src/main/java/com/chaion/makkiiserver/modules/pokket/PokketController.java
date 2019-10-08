@@ -8,7 +8,6 @@ import com.chaion.makkiiserver.modules.config.ModuleConfigRepository;
 import com.chaion.makkiiserver.modules.pokket.model.*;
 import com.chaion.makkiiserver.modules.pokket.repository.PokketOrderRepository;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
-import com.chaion.makkiiserver.repository.file.StorageService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -449,7 +448,7 @@ public class PokketController {
         List<String> addressList = getOrderReq.getAddresses();
 
         Sort sort = new Sort(Sort.Direction.DESC, "status", "createTime");
-        Page<PokketOrder> orders = repo.findByInvestorAddressInAndStatusIsNot(addressList, PokketOrderStatus.ERROR,
+        Page<PokketOrder> orders = repo.findByInvestorAddressIn(addressList,
                 PageRequest.of(getOrderReq.getPage(), getOrderReq.getSize(), sort));
         return orders;
     }
@@ -519,6 +518,16 @@ public class PokketController {
         return banners;
     }
 
+    @PostMapping("/resolveOrder/{orderId}")
+    public void resolveError(@PathVariable("orderId") String orderId) {
+        PokketOrder order = getOrder(orderId);
+        List<ErrorItem> errors = order.getErrors();
+        for (ErrorItem item : errors) {
+            item.setResolved(true);
+        }
+        repo.save(order);
+    }
+
     /**
      * Fetch pokket order from db.
      *
@@ -534,8 +543,7 @@ public class PokketController {
     }
 
     private void updateErrorStatus(PokketOrder order, String message) {
-        order.setStatus(PokketOrderStatus.ERROR);
-        order.setErrorMessage(message);
+        order.addErrorItem(message);
         logger.error(message);
         repo.save(order);
     }

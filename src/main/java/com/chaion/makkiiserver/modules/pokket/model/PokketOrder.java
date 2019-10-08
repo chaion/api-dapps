@@ -5,6 +5,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class PokketOrder {
@@ -50,10 +52,20 @@ public class PokketOrder {
     private Long startTime;
     @ApiModelProperty(value = "产品Id")
     private Long productId;
-    @ApiModelProperty(value = "autoroll前一订单号", notes = "该字段暂未使用")
-    private String previousOrderId;
-    @ApiModelProperty(value = "订单出错信息")
-    private String errorMessage;
+    @ApiModelProperty(value = "错误历史")
+    private List<ErrorItem> errors;
+
+    public void addErrorItem(String errorMessage) {
+        ErrorItem errorItem = new ErrorItem();
+        errorItem.setErrorMessage(errorMessage);
+        errorItem.setResolved(false);
+        errorItem.setTime(System.currentTimeMillis());
+        errorItem.setCurrentStatus(status);
+        if (errors == null) {
+            errors = new ArrayList<>();
+        }
+        errors.add(errorItem);
+    }
 
 
 }

@@ -25,28 +25,28 @@ public class FileController {
 
     @PostMapping("/image/upload")
     @ResponseBody
-    public String upload(@RequestParam(value = "image") MultipartFile file) {
-        String newFilename = UUID.randomUUID().toString();
+    public String upload(@RequestParam(value = "file") MultipartFile file) {
+        String newFilename = UUID.randomUUID().toString() + ".png";
         try {
             String targetPath = "/image/" + newFilename;
             storageService.store(file, newFilename);
             return targetPath;
         } catch (StorageException e) {
-            e.printStackTrace();
+            logger.error("failed to save file " + file.getName(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file " + file.getName());
         }
     }
 
-    @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_PNG_VALUE)
     @ResponseBody
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
         Resource file = null;
         try {
             file = storageService.loadAsResource(filename);
-            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+            return ResponseEntity.ok()/*.header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"" + file.getFilename() + "\"")*/.body(file);
         } catch (StorageException e) {
-            logger.error("load file failed: ", e.getMessage());
+            logger.error("load file failed: ", e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, filename + " not found");
         }
     }

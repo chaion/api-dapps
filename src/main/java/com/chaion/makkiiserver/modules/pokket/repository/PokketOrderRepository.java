@@ -13,9 +13,7 @@ import java.util.List;
 @Repository
 public interface PokketOrderRepository extends MongoRepository<PokketOrder, String>, PokketOrderRepositoryCustom {
 
-    Page<PokketOrder> findByInvestorAddressInAndStatusIsNot(List<String> addresses,
-                                                            PokketOrderStatus status,
-                                                            Pageable page);
+    Page<PokketOrder> findByInvestorAddressIn(List<String> addresses, Pageable page);
 
     List<PokketOrder> findByOrderIdIn(List<String> pokketOrderIds);
 
