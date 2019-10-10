@@ -38,7 +38,7 @@ public class EventLogController {
         if (startDate == null) startDate = 0L;
         if (endDate == null) endDate = Long.MAX_VALUE;
         Pageable page = PageRequest.of(offset, limit);
-        if (event != null) {
+        if (event != null && !event.isBlank()) {
             return eventlogRepo.findEventsByEventInAndCreatedBetween(Arrays.asList(event.split(",")),
                     startDate, endDate, page);
         } else {
