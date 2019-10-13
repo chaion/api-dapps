@@ -68,11 +68,32 @@
 			<artifactId>springfox-swagger-ui</artifactId>
 			<version>2.9.2</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.web3j.aion/web3j-aion-common -->
+		<dependency>
+			<groupId>org.web3j.aion</groupId>
+			<artifactId>web3j-aion-common</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.aion</groupId>
+			<artifactId>rlp4j</artifactId>
+			<version>46e0cb3</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/org/aion/rlp4j/46e0cb3/rlp4j-46e0cb3.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.aion</groupId>
+			<artifactId>util4j</artifactId>
+			<version>2c5aa4ad</version>
+			<scope>system</scope>
+            <systemPath>${basedir}/lib/org/aion/util4j/2c5aa4ad/util4j-2c5aa4ad.jar</systemPath>
+		</dependency>
 		<dependency>
 			<groupId>org.web3j</groupId>
 			<artifactId>core</artifactId>
 			<version>4.2.0</version>
 		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.aspectj/aspectjweaver -->
 		<dependency>
 			<groupId>org.aspectj</groupId>
@@ -114,6 +135,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<includeSystemScope>true</includeSystemScope>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

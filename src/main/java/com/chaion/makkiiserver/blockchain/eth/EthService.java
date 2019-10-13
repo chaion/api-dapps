@@ -47,8 +47,8 @@ public class EthService extends BaseBlockchain {
 
     private Web3j ethWeb3j;
 
-    public EthService(@Value("${blockchain.eth.rpcinterface}") String rpcServerInterface,
-                      @Value("${blockchain.eth.rpcserver}") String rpcServer) {
+    public EthService(@Value("${blockchain.eth.apiinterface}") String rpcServerInterface,
+                      @Value("${blockchain.eth.apiserver}") String rpcServer) {
         logger.info("initialize blockchain service: " + rpcServerInterface + ":" + rpcServer);
         if (rpcServerInterface.equalsIgnoreCase("ipc")) {
             ethWeb3j = AlethWeb3j.build(new UnixIpcService(rpcServer));
