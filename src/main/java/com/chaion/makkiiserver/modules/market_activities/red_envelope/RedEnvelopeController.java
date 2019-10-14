@@ -118,7 +118,7 @@ public class RedEnvelopeController {
         // send transaction
         String txHash = null;
         try {
-            txHash = aionService.sendTransaction(pk, address, BigInteger.valueOf(amount * (long) Math.pow(10, 18)));
+            txHash = aionService.sendTransaction(pk, address, BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(18)));
             logger.info("add tx {} to pending queue, wait confirmation.", txHash);
             aionService.addPendingTransaction(txHash, ((transactionHash, status) -> {
                 RedEnvelopeHistory record = repo.findFirstByTxHash(transactionHash);

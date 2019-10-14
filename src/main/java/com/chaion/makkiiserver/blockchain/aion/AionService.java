@@ -25,7 +25,7 @@ import java.util.Optional;
 @Service
 public class AionService extends BaseBlockchain {
 
-    private static final Long DEFAULT_GAS_PRICE = 2l * (long) Math.pow(10,9);
+    private static final Long DEFAULT_GAS_PRICE = 20*1000000000l;
 
     private static final Logger logger = LoggerFactory.getLogger(AionService.class);
 
@@ -55,7 +55,7 @@ public class AionService extends BaseBlockchain {
             if (tx.hasError()) {
                 Response.Error error = tx.getError();
                 logger.error("[aion][sendTransaction] failed: ", error);
-                throw new BlockchainException(String.format("error code: {}, message: {}, data: {}",
+                throw new BlockchainException(String.format("error code: %s, message: %s, data: %s",
                         error.getCode(), error.getMessage(), error.getData()));
             }
             String txHash = tx.getTransactionHash();
