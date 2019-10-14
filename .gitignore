@@ -27,3 +27,5 @@ HELP.md
 *.log
 
 upload
+application-*credential.properties
+application-*credential.properties
