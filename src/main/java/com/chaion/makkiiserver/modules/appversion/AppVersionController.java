@@ -104,7 +104,7 @@ public class AppVersionController {
                                            @RequestParam(value = "size") int limit,
                                            @RequestParam(value = "platform", required = false) String platform) {
         List<String> platforms;
-        if (platform != null && !platform.isBlank()) {
+        if (platform != null && !platform.isEmpty()) {
             platforms = Arrays.asList(platform.toLowerCase().split(","));
         } else {
             platforms = new ArrayList<>();

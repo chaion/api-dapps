@@ -1,5 +1,6 @@
 package com.chaion.makkiiserver;
 
+import com.chaion.makkiiserver.blockchain.aion.AionService;
 import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
@@ -33,6 +34,9 @@ public class ScheduledTasks {
     private BtcService btcService;
 
     @Autowired
+    private AionService aionService;
+
+    @Autowired
     private EthTokenRepository ethTokenRepo;
 
     @Autowired
@@ -62,17 +66,22 @@ public class ScheduledTasks {
     /**
      * check pending transaction status every 10 seconds
      */
-//    @Scheduled(fixedRate = 10 * 1000)
+    @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingEthTxStatus() {
         ethService.checkPendingTxStatus();
     }
 
-//    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 10 * 60 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();
     }
 
-//    @Scheduled(fixedRate = 10 * 1000)
+    @Scheduled(fixedRate = 10 * 1000)
+    public void checkPendingAionTxStatus() {
+        aionService.checkPendingTxStatus();
+    }
+
+    @Scheduled(fixedRate = 10 * 1000)
     public void refreshPokketProductList() {
         pokketService.refreshProductList();
     }

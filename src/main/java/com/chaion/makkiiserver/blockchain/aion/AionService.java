@@ -1,6 +1,8 @@
 package com.chaion.makkiiserver.blockchain.aion;
 
+import com.chaion.makkiiserver.blockchain.BaseBlockchain;
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,15 +13,19 @@ import org.web3j.aion.crypto.Ed25519KeyPair;
 import org.web3j.aion.protocol.Aion;
 import org.web3j.aion.tx.AionTransactionManager;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
 import java.math.BigInteger;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
-public class AionService {
+public class AionService extends BaseBlockchain {
 
-    private static final Long DEFAULT_GAS_PRICE = 20000000000L;
+    private static final Long DEFAULT_GAS_PRICE = 2l * (long) Math.pow(10,9);
 
     private static final Logger logger = LoggerFactory.getLogger(AionService.class);
 
@@ -59,5 +65,55 @@ public class AionService {
             logger.error("[aion][sendTransaction] exception: ", e);
             throw new BlockchainException(e.getMessage());
         }
+    }
+
+    @Override
+    public void checkPendingTxStatus() {
+        logger.info("check pending aion tx status...");
+        for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
+            TransactionStatus st = entry.getValue();
+            String txHash = st.getTxId();
+            logger.info("processing tx: " + txHash + " " + st.getStatus());
+            if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
+                checkTxStatusOfReceipt(st, txHash);
+            }
+        }
+    }
+
+    public TransactionReceipt getTransactionReceipt(String txHash) throws BlockchainException {
+        EthGetTransactionReceipt resp = null;
+        try {
+            resp = aion.ethGetTransactionReceipt(txHash).sendAsync().get();
+        } catch (Exception e) {
+            throw new BlockchainException(e.getMessage());
+        }
+        if (resp.hasError()) {
+            throw new BlockchainException(resp.getError().toString());
+        }
+        Optional<TransactionReceipt> receiptOpt = resp.getTransactionReceipt();
+        if (!receiptOpt.isPresent()) {
+            return null;
+        }
+        return receiptOpt.get();
+    }
+
+    private void checkTxStatusOfReceipt(TransactionStatus st, String txHash) {
+        TransactionReceipt receipt = null;
+        try {
+            receipt = getTransactionReceipt(txHash);
+        } catch (Exception e) {
+            // ignore exception
+            return;
+        }
+        if (receipt == null) return;
+        logger.info("tx[" + txHash + "] receipt is confirmed " + receipt.isStatusOK());
+        st.setStatus(TransactionStatus.CONFIRMED);
+        pendingTransactions.remove(txHash);
+        st.getListener().transactionConfirmed(txHash, receipt.isStatusOK());
+    }
+
+    @Override
+    public String sendRawTransaction(String rawTransaction) throws BlockchainException {
+        return null;
     }
 }

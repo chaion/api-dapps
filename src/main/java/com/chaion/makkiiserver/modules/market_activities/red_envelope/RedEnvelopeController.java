@@ -5,19 +5,22 @@ import com.chaion.makkiiserver.blockchain.aion.AionService;
 import com.chaion.makkiiserver.modules.config.ModuleConfig;
 import com.chaion.makkiiserver.modules.config.ModuleConfigRepository;
 import com.google.gson.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 @RestController
 @RequestMapping("market_activity/red_envelope")
 public class RedEnvelopeController {
+
+    private static final Logger logger = LoggerFactory.getLogger(RedEnvelopeController.class);
 
     @Autowired
     ModuleConfigRepository moduleRepo;
@@ -26,6 +29,26 @@ public class RedEnvelopeController {
     @Autowired
     AionService aionService;
 
+
+    @GetMapping(value = "/image", produces = "application/json; charset=utf-8")
+    public String getImage() {
+        ModuleConfig config = moduleRepo.findFirstByModuleNameIgnoreCase("RedEnvelope");
+        if (config == null) {
+            return errorJsonObject("Red Envelope module is not configured.").toString();
+        }
+        Map<String, String> map = config.getModuleParams();
+        if (map == null) {
+            return errorJsonObject("Red Envelope's ModuleParams is not configured.").toString();
+        }
+        if (!map.containsKey("imageUrl")) {
+            return errorJsonObject("Red Envelope's imageUrl is not configured.").toString();
+        }
+        JsonObject o = new JsonObject();
+        o.addProperty("imageUrl", map.get("imageUrl"));
+        o.addProperty("imageLink", map.get("imageLink"));
+        return successJsonObject(o).toString();
+    }
+
     /**
      * validate if phone id and address already received red envelope.
      *
@@ -33,7 +56,7 @@ public class RedEnvelopeController {
      * @param address
      * @return
      */
-    @PostMapping("/validate")
+    @PostMapping(value = "/validate", produces = "application/json; charset=utf-8")
     public String validate(@RequestParam(value="phoneId") String phoneId,
                            @RequestParam(value="address") String address,
                            @RequestParam(value="verifyCode") String verifyCode) {
@@ -45,22 +68,25 @@ public class RedEnvelopeController {
         if (config != null && config.isEnabled()) {
             Map<String, String> params = config.getModuleParams();
             if (params == null || !params.containsKey("verifyCode")) {
-                return errorJsonObject("verifyCode is missing in Envelope module.").toString();
+                return errorJsonObject("红包模块未开放").toString();
             } else {
                 if (!verifyCode.equalsIgnoreCase(params.get("verifyCode"))) {
                     return errorJsonObject("invalid verifyCode").toString();
                 }
             }
         } else {
-            return errorJsonObject("RedEnvelope module is disabled.").toString();
+            return errorJsonObject("红包模块未开放").toString();
         }
 
-        if (repo.countByPhoneId(phoneId) != 0) {
-            return errorJsonObject(phoneId + " already got red envelope").toString();
+        List<RedEnvelopeHsitoryStatus> in = new ArrayList<>();
+        in.add(RedEnvelopeHsitoryStatus.PENDING);
+        in.add(RedEnvelopeHsitoryStatus.SUCCESS);
+        if (repo.countByPhoneIdAndStatusIn(phoneId, in) != 0) {
+            return errorJsonObject("该手机已领取过签到红包").toString();
         }
         // TODO: uncomment
-//        if (repo.countByAddress(address) != 0) {
-//            return errorJsonObject(address + " already got red envelope").toString();
+//        if (repo.countByAddressAndStatusIn(address, in) != 0) {
+//            return errorJsonObject("该地址" + address + " 已领取过签到红包").toString();
 //        }
         return successJsonObject(null).toString();
     }
@@ -92,7 +118,16 @@ public class RedEnvelopeController {
         // send transaction
         String txHash = null;
         try {
-            txHash = aionService.sendTransaction(pk, address, BigInteger.valueOf(amount * 1000000000));
+            txHash = aionService.sendTransaction(pk, address, BigInteger.valueOf(amount * (long) Math.pow(10, 18)));
+            logger.info("add tx {} to pending queue, wait confirmation.", txHash);
+            aionService.addPendingTransaction(txHash, ((transactionHash, status) -> {
+                RedEnvelopeHistory record = repo.findFirstByTxHash(transactionHash);
+                if (record != null) {
+                    record.setStatus(status? RedEnvelopeHsitoryStatus.SUCCESS: RedEnvelopeHsitoryStatus.FAIL);
+                    repo.save(record);
+                    logger.info("{} is updated as {}", transactionHash, status);
+                }
+            }));
         } catch (BlockchainException e) {
             return errorJsonObject("send transaction fail: " + e.getMessage()).toString();
         }
@@ -102,6 +137,7 @@ public class RedEnvelopeController {
         re.setPhoneId(phoneId);
         re.setAmount(BigInteger.valueOf(amount));
         re.setTxHash(txHash);
+        re.setStatus(RedEnvelopeHsitoryStatus.PENDING);
         repo.save(re);
 
         JsonObject r = new JsonObject();

@@ -39,7 +39,6 @@ public class CurrencyService {
         logger.info("fetch url: " + url);
         ResponseEntity<String> resp = rest.exchange(url, HttpMethod.GET, entity, String.class);
         String body = resp.getBody();
-        logger.info("body: " + body);
 
         JsonObject root = new JsonParser().parse(body).getAsJsonObject();
         if (root.has("RAW")) {
@@ -66,7 +65,6 @@ public class CurrencyService {
             throw new ServiceException(errorType, errorMessage);
         }
 
-        logger.info("fetch result:" + prices.toString());
         return prices;
     }
 
@@ -89,7 +87,6 @@ public class CurrencyService {
             logger.info("fetch url: " + url);
             ResponseEntity<String> resp = rest.exchange(url, HttpMethod.GET, entity, String.class);
             String body = resp.getBody();
-            logger.info("body: " + body);
 
             JsonObject root = new JsonParser().parse(body).getAsJsonObject();
             if (root.has("RAW")) {
@@ -116,7 +113,6 @@ public class CurrencyService {
                 throw new ServiceException(errorType, errorMessage);
             }
         }
-        logger.info("fetch result:" + prices.toString());
         return prices;
     }
 }
