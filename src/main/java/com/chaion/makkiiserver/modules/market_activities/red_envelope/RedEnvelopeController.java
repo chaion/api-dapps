@@ -71,7 +71,7 @@ public class RedEnvelopeController {
                 return errorJsonObject("红包模块未开放").toString();
             } else {
                 if (!verifyCode.equalsIgnoreCase(params.get("verifyCode"))) {
-                    return errorJsonObject("invalid verifyCode").toString();
+                    return errorJsonObject("无效的签到码").toString();
                 }
             }
         } else {
