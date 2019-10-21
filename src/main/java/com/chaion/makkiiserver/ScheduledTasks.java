@@ -4,7 +4,6 @@ import com.chaion.makkiiserver.blockchain.aion.AionService;
 import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
-import com.chaion.makkiiserver.modules.coinmarket.ExchangePool;
 import com.chaion.makkiiserver.modules.pokket.PokketService;
 import com.chaion.makkiiserver.modules.token.EthTokenRepository;
 import org.slf4j.Logger;
@@ -13,9 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.util.Map;
-
 @Component
 public class ScheduledTasks {
 
@@ -23,9 +19,6 @@ public class ScheduledTasks {
 
     @Autowired
     private CurrencyService currencyService;
-
-    @Autowired
-    private ExchangePool pool;
 
     @Autowired
     private EthService ethService;
@@ -47,20 +40,16 @@ public class ScheduledTasks {
      */
     @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchCurrencyRate() {
-        logger.info("fetch currency rate");
-
-        logger.info("fetch coins...");
-        for (String crypto : pool.getCryptoList()) {
-            try{
-                Map<String,BigDecimal> prices = currencyService.fetchCurrency(crypto, pool.getFiatList());
-                for(String currency: prices.keySet()){
-                    pool.updatePrice(crypto, currency, prices.get(currency));
-                }
-            }catch (ServiceException e) {
-                logger.error("fetch [" + crypto +  "] failed: " + e.getMessage());
-            }
+        try {
+            currencyService.updateExchangeRates();
+        } catch (ServiceException e) {
+            logger.error("refresh exchange rates failed: ", e.getMessage());
         }
-        pool.dump();
+    }
+
+    @Scheduled(fixedRate = 60 * 60 * 1000)
+    public void refreshNews() {
+
     }
 
     /**

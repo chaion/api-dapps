@@ -7,6 +7,7 @@ import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,10 +25,10 @@ public class ExchangeController {
     private static final Logger logger = LoggerFactory.getLogger(ExchangeController.class);
 
     @Autowired
-    private ExchangePool pool;
+    private CurrencyService currencyService;
 
     @Autowired
-    private CurrencyService currencyService;
+    RedisTemplate redisTemplate;
 
     @ApiOperation(value="Get erc 20 price: erc20 -> fiat currency")
     @GetMapping(value="/market/erc20/price")
@@ -77,13 +78,15 @@ public class ExchangeController {
     }
 
     private MarketPrice getPriceInternal(String crypto, String fiat) {
-        BigDecimal price = pool.getPrice(crypto, fiat);
-        if (price != null) {
-            MarketPrice mp = new MarketPrice();
-            mp.setCrypto(crypto);
-            mp.setFiat(fiat);
-            mp.setPrice(price);
-            return mp;
+        if (redisTemplate.hasKey(crypto + "->" + fiat)) {
+            Object price = redisTemplate.opsForValue().get(crypto + "->" + fiat);
+            if (price != null && price instanceof BigDecimal) {
+                MarketPrice mp = new MarketPrice();
+                mp.setCrypto(crypto);
+                mp.setFiat(fiat);
+                mp.setPrice((BigDecimal) price);
+                return mp;
+            }
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                 crypto + "<->" + fiat + " exchange rate not found.");
@@ -100,16 +103,21 @@ public class ExchangeController {
         List<MarketPrice> list = new ArrayList<>();
         String[] cryptos = cryptoCurrencies.split(",");
         for (String crypto: cryptos) {
-            BigDecimal price = pool.getPrice(crypto, fiat);
-            if (price != null) {
-                MarketPrice mp = new MarketPrice();
-                mp.setCrypto(crypto);
-                mp.setFiat(fiat);
-                mp.setPrice(price);
-                list.add(mp);
+            if (redisTemplate.hasKey(crypto + "->" + fiat)) {
+                Object price = redisTemplate.opsForValue().get(crypto + "->" + fiat);
+                if (price != null && price instanceof BigDecimal) {
+                    MarketPrice mp = new MarketPrice();
+                    mp.setCrypto(crypto);
+                    mp.setFiat(fiat);
+                    mp.setPrice((BigDecimal) price);
+                    list.add(mp);
+                } else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            crypto + "<->" + fiat + " exchange rate not found.");
+                }
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                crypto + "<->" + fiat + " exchange rate not found.");
+                    crypto + "<->" + fiat + " exchange rate not found.");
             }
         }
         return list;
