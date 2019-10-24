@@ -51,35 +51,35 @@ public class ScheduledTasks {
         }
     }
 
-    @Scheduled(fixedRate = 60 * 60 * 1000)
-    public void refreshNews() {
-        try {
-            coinVoiceService.fetch();
-        } catch (Exception e) {
-            logger.error("fetch coin voice news failed: ", e.getMessage());
-        }
-    }
+//    @Scheduled(fixedRate = 60 * 60 * 1000)
+//    public void refreshNews() {
+//        try {
+//            coinVoiceService.fetch();
+//        } catch (Exception e) {
+//            logger.error("fetch coin voice news failed: ", e.getMessage());
+//        }
+//    }
 
     /**
      * check pending transaction status every 10 seconds
      */
-    @Scheduled(fixedRate = 10 * 1000)
-    public void checkPendingEthTxStatus() {
-        ethService.checkPendingTxStatus();
-    }
+//    @Scheduled(fixedRate = 10 * 1000)
+//    public void checkPendingEthTxStatus() {
+//        ethService.checkPendingTxStatus();
+//    }
 
-    @Scheduled(fixedRate = 10 * 60 * 1000)
-    public void checkPendingBtcTxStatus() {
-        btcService.checkPendingTxStatus();
-    }
+//    @Scheduled(fixedRate = 10 * 60 * 1000)
+//    public void checkPendingBtcTxStatus() {
+//        btcService.checkPendingTxStatus();
+//    }
 
     @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingAionTxStatus() {
         aionService.checkPendingTxStatus();
     }
 
-    @Scheduled(fixedRate = 10 * 1000)
-    public void refreshPokketProductList() {
-        pokketService.refreshProductList();
-    }
+//    @Scheduled(fixedRate = 10 * 1000)
+//    public void refreshPokketProductList() {
+//        pokketService.refreshProductList();
+//    }
 }
