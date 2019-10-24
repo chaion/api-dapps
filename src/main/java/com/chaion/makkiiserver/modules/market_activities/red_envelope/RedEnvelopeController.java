@@ -101,6 +101,7 @@ public class RedEnvelopeController {
     public String unfold(@RequestParam(value = "phoneId") String phoneId,
                          @RequestParam(value = "address") String address) {
         String pk = null;
+        int randomRange = 50;
         ModuleConfig config = moduleRepo.findFirstByModuleNameIgnoreCase("RedEnvelope");
         if (config != null && config.isEnabled()) {
             Map<String, String> moduleParams = config.getModuleParams();
@@ -108,12 +109,15 @@ public class RedEnvelopeController {
                 return errorJsonObject("privateKey is missing in Envelope module.").toString();
             }
             pk = moduleParams.get("privateKey");
+            if (moduleParams.containsKey("maxAmount")) {
+                randomRange = Integer.parseInt(moduleParams.get("maxAmount"));
+            }
         } else {
             return errorJsonObject("RedEnvelope module is disabled.").toString();
         }
 
         Random random = new Random();
-        long amount = random.nextInt(50);
+        long amount = random.nextInt(randomRange);
 
         // send transaction
         String txHash = null;
