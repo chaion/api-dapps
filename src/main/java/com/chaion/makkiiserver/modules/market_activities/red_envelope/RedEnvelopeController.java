@@ -84,10 +84,9 @@ public class RedEnvelopeController {
         if (repo.countByPhoneIdAndStatusIn(phoneId, in) != 0) {
             return errorJsonObject("该手机已领取过签到红包").toString();
         }
-        // TODO: uncomment
-//        if (repo.countByAddressAndStatusIn(address, in) != 0) {
-//            return errorJsonObject("该地址" + address + " 已领取过签到红包").toString();
-//        }
+        if (repo.countByAddressAndStatusIn(address, in) != 0) {
+            return errorJsonObject("该地址" + address + " 已领取过签到红包").toString();
+        }
         return successJsonObject(null).toString();
     }
 
@@ -117,7 +116,7 @@ public class RedEnvelopeController {
         }
 
         Random random = new Random();
-        long amount = random.nextInt(randomRange);
+        long amount = random.nextInt(randomRange) + 1;
 
         // send transaction
         String txHash = null;
