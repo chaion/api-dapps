@@ -12,6 +12,8 @@ import org.web3j.aion.VirtualMachine;
 import org.web3j.aion.crypto.Ed25519KeyPair;
 import org.web3j.aion.protocol.Aion;
 import org.web3j.aion.tx.AionTransactionManager;
+import org.web3j.protocol.ObjectMapperFactory;
+import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
@@ -33,6 +35,9 @@ public class AionService extends BaseBlockchain {
 
     public AionService(@Value("${blockchain.aion.apiserver}") String rpcServer) {
         aion = Aion.build(new HttpService(rpcServer));
+        logger.info("old request mixin is: " + ObjectMapperFactory.getObjectMapper().findMixInClassFor(Request.class));
+        ObjectMapperFactory.getObjectMapper().addMixIn(Request.class, null);
+        logger.info("new Request mixin is: " + ObjectMapperFactory.getObjectMapper().findMixInClassFor(Request.class));
     }
 
     /**
