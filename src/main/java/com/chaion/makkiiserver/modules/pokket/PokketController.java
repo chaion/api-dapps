@@ -504,13 +504,15 @@ public class PokketController {
         List<Banner> banners = new ArrayList<>();
         ModuleConfig config = moduleRepo.findFirstByModuleNameIgnoreCase("Pokket");
         Map<String, String> params = config.getModuleParams();
-        if (params.containsKey("banners")) {
+        if (params != null && params.containsKey("banners")) {
             JsonArray bannerArray = new JsonParser().parse(params.get("banners")).getAsJsonArray();
             for (int i = 0; i < bannerArray.size(); i++) {
                 JsonObject joBanner = bannerArray.get(i).getAsJsonObject();
                 Banner banner = new Banner();
                 banner.setImageUrl(joBanner.get("banner_url").getAsString());
-                banner.setLink(joBanner.get("banner_link").getAsString());
+                if (joBanner.has("banner_link")) {
+                    banner.setLink(joBanner.get("banner_link").getAsString());
+                }
                 banners.add(banner);
             }
         }
