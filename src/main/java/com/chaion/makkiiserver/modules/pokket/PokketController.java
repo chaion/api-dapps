@@ -156,7 +156,7 @@ public class PokketController {
             if (signum > 0) {
                 validateDepositCollateralTx(newOrders, transactionHash, tusdTransfer);
             } else {
-                validateWithdrawCollateral(newOrders, transactionHash, tusdTransfer);
+                validateWithdrawCollateralTx(newOrders, transactionHash, tusdTransfer);
             }
         } else {
             logger.info("tusd withdraw and deposit are equal, no transaction required.");
@@ -227,9 +227,9 @@ public class PokketController {
      * @param transactionHash
      * @param tusdTransfer
      */
-    private void validateWithdrawCollateral(List<PokketOrder> newOrders,
-                                            String transactionHash,
-                                            BigDecimal tusdTransfer) {
+    private void validateWithdrawCollateralTx(List<PokketOrder> newOrders,
+                                              String transactionHash,
+                                              BigDecimal tusdTransfer) {
         if (!ethService.validateERC20Transaction(transactionHash,
                 MAKKII_WALLET_ADDRESS,
                 POKKET_ETH_WALLET_ADDRESS,
@@ -362,7 +362,9 @@ public class PokketController {
         }
 
         if (!validateYieldTokenTxResultLessThan(txHashYieldToken, order)) return false;
-        if (!validateReturnCollateralTxResultLessThan(txHashReturnTUSD, order)) return false;
+        // no need to validate return tusd transaction hash since it's not for this order but for all orders including
+        // new invest and closed orders.
+//        if (!validateReturnCollateralTxResultLessThan(txHashReturnTUSD, order)) return false;
 
         order.setYieldTokenTransactionHash(txHashYieldToken);
         order.setReturnTUSDTransactionHash(txHashReturnTUSD);
