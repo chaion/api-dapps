@@ -1,11 +1,14 @@
 package com.chaion.makkiiserver.modules.news;
 
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 
 import java.util.List;
 
 @Data
 public class CoinVoiceItem {
+    @Id
+    private String id;
     private String title;
     private String link;
     private Long pubDate;

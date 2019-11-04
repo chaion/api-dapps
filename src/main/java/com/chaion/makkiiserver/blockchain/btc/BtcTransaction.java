@@ -112,9 +112,9 @@ public class BtcTransaction {
                                 scriptPubKey.setHex(SafeGson.getJsonStringValue(joScriptPubKey, "hex"));
                                 scriptPubKey.setAsm(SafeGson.getJsonStringValue(joScriptPubKey, "asm"));
                                 scriptPubKey.setType(SafeGson.getJsonStringValue(joScriptPubKey, "type"));
-                                if (joScriptPubKey.has("investorAddresses")) {
-                                    if (joScriptPubKey.get("investorAddresses").isJsonArray()) {
-                                        JsonArray addressArray = joScriptPubKey.get("investorAddresses").getAsJsonArray();
+                                if (joScriptPubKey.has("addresses")) {
+                                    if (joScriptPubKey.get("addresses").isJsonArray()) {
+                                        JsonArray addressArray = joScriptPubKey.get("addresses").getAsJsonArray();
                                         List<String> addresses = new ArrayList<>();
                                         scriptPubKey.setAddresses(addresses);
                                         for (int j = 0; j < addressArray.size(); j++) {

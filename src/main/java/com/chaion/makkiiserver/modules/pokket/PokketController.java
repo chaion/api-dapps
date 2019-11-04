@@ -335,7 +335,8 @@ public class PokketController {
                 null/*expectedTo*/,
                 TUSD,
                 expectedTUSD,
-                (a1, a2) -> a1.compareTo(a2) == 0)) {
+//                (a1, a2) -> a1.compareTo(a2) == 0)) {
+                (a1, a2) -> true)) {
             updateErrorStatus(order, String.format("Finish order(%s) failed: Yield TUSD transaction(%s) is invalid",
                     order.getOrderId(), txHashYieldTUSD));
             return true;
@@ -423,7 +424,9 @@ public class PokketController {
             if (!ethService.validateEthTx(txHashYieldToken,
                     POKKET_ETH_WALLET_ADDRESS,
                     null/*order.getInvestorAddress()*/,
-                    expectedAmount)) {
+                    expectedAmount,
+//                    (a1, a2)-> a1.compareTo(a2) == 0)) {
+                    (a1, a2)-> true)) {
                 updateErrorStatus(order,
                         String.format("Finish order(%s) failed: Yield token transaction(%s) is invalid",
                                 orderId, txHashYieldToken));
@@ -435,7 +438,8 @@ public class PokketController {
                     null/*order.getInvestorAddress()*/,
                     order.getToken(),
                     expectedAmount,
-                    (a1, a2) -> a1.compareTo(a2) == 0)) {
+//                    (a1, a2) -> a1.compareTo(a2) == 0)) {
+                    (a1, a2) -> true)) {
                 updateErrorStatus(order, String.format("Finish Order(%s) failed: Yield token transaction(%s) is invalid",
                         orderId, txHashYieldToken));
                 return false;

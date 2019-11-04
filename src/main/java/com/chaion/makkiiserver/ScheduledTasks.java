@@ -51,14 +51,14 @@ public class ScheduledTasks {
         }
     }
 
-//    @Scheduled(fixedRate = 60 * 60 * 1000)
-//    public void refreshNews() {
-//        try {
-//            coinVoiceService.fetch();
-//        } catch (Exception e) {
-//            logger.error("fetch coin voice news failed: ", e.getMessage());
-//        }
-//    }
+    @Scheduled(fixedRate = 60 * 60 * 1000)
+    public void refreshNews() {
+        try {
+            coinVoiceService.fetch();
+        } catch (Exception e) {
+            logger.error("fetch coin voice news failed: ", e.getMessage());
+        }
+    }
 
     /**
      * check pending transaction status every 10 seconds
@@ -68,7 +68,8 @@ public class ScheduledTasks {
         ethService.checkPendingTxStatus();
     }
 
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+//    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 15 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();
     }

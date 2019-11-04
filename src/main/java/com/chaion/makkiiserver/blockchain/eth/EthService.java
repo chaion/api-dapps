@@ -358,7 +358,8 @@ public class EthService extends BaseBlockchain {
         return true;
     }
 
-    public boolean validateEthTx(String transactionHash, String expectedFrom, String expectedTo, BigDecimal expectedAmount) {
+    public boolean validateEthTx(String transactionHash, String expectedFrom, String expectedTo,
+                                 BigDecimal expectedAmount, BiFunction<BigInteger, BigInteger, Boolean> amountValidator) {
         logger.info("validate eth transfer transaction[transactionHash=" + transactionHash +
                 ", from=" + expectedFrom +
                 ", to=" + expectedTo +
@@ -411,8 +412,10 @@ public class EthService extends BaseBlockchain {
             return false;
         }
         Transaction transaction = transactionOpt.get();
-        BigDecimal actualAmount = new BigDecimal(transaction.getValue());
-        if (actualAmount.compareTo(expectedAmount.scaleByPowerOfTen(18)) != 0) {
+        BigInteger actualAmount = transaction.getValue();
+        BigInteger expectedAmountBI = expectedAmount.scaleByPowerOfTen(18).toBigInteger();
+        if (!(amountValidator != null && amountValidator.apply(actualAmount, expectedAmountBI)) ||
+                (amountValidator == null && actualAmount.compareTo(expectedAmountBI) != 0)) {
             logger.error("validate failed: expected amount is " + expectedAmount.scaleByPowerOfTen(18) + ", actual is " + actualAmount);
             return false;
         }

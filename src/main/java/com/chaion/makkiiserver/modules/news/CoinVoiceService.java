@@ -13,7 +13,6 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CoinVoiceService {
@@ -33,16 +33,23 @@ public class CoinVoiceService {
     @Autowired
     RestTemplate restTemplate;
     @Autowired
-    RedisTemplate redisTemplate;
+    CoinVoiceRepository repo;
 
     public void fetch() throws IOException, FeedException {
         URL feedSource = new URL(COIN_VOICE_FEED);
         SyndFeedInput input = new SyndFeedInput();
         SyndFeed feed = input.build(new XmlReader(feedSource));
         List<SyndEntry> list = feed.getEntries();
-        List<CoinVoiceItem> items = new ArrayList<>();
         for (SyndEntry entry : list) {
-            CoinVoiceItem item = new CoinVoiceItem();
+            String link = entry.getLink();
+            CoinVoiceItem item = null;
+            Optional<CoinVoiceItem> itemOpt = repo.findById(link);
+            if (itemOpt.isPresent()) {
+                item = itemOpt.get();
+            } else {
+                item = new CoinVoiceItem();
+                item.setId(entry.getLink());
+            }
             List<SyndCategory> syndCategories = entry.getCategories();
             List<String> categories = new ArrayList<>();
             for (SyndCategory c : syndCategories) {
@@ -58,23 +65,22 @@ public class CoinVoiceService {
             Date date = entry.getPublishedDate();
             item.setPubDate(date.getTime());
 
-            String html = restTemplate.getForObject(item.getLink(), String.class);
-            Document root = Jsoup.parse(html);
-            Elements eles = root.getElementsByAttributeValue("itemprop", "articleBody");
-            if (eles.size() > 0) {
-                eles = eles.get(0).getElementsByTag("img");
-                if (eles.size() > 0) {
-                    item.setImageLink(eles.get(0).attr("src"));
-                }
-            }
-
-            items.add(item);
+            repo.save(item);
+//            extractImage(item);
         }
-        for (CoinVoiceItem i : items) {
-            System.out.println(i);
-        }
-        redisTemplate.opsForValue().set("coinvoice", items);
         logger.info("fetch " + COIN_VOICE_FEED + " finish.");
+    }
+
+    private void extractImage(CoinVoiceItem item) {
+        String html = restTemplate.getForObject(item.getLink(), String.class);
+        Document root = Jsoup.parse(html);
+        Elements eles = root.getElementsByAttributeValue("itemprop", "articleBody");
+        if (eles.size() > 0) {
+            eles = eles.get(0).getElementsByTag("img");
+            if (eles.size() > 0) {
+                item.setImageLink(eles.get(0).attr("src"));
+            }
+        }
     }
 
 }

@@ -26,7 +26,7 @@ public class EthServiceTest {
         String from = "0xfe5a44605eed83dae7e2ca1a83f84ed61ce38dcd";
         String to = "0xdd6c48d56bab7c0cd5ce2517f9d4100e12bf8474";
         BigDecimal amount = new BigDecimal("0");
-        Assert.assertTrue(ethService.validateEthTx(txHash, from, to, amount));
+        Assert.assertTrue(ethService.validateEthTx(txHash, from, to, amount, (a1, a2) -> true));
     }
 
     @Test
@@ -35,7 +35,7 @@ public class EthServiceTest {
         String from = "0x4f56279cfefea851bd359522f0c323a055f748a8";
         String to = "0xcfb5896a29820a4571cff44f2a31ac77a419e616";
         BigDecimal amount = new BigDecimal("0.99979");
-        Assert.assertTrue(ethService.validateEthTx(txHash, from, to, amount));
+        Assert.assertTrue(ethService.validateEthTx(txHash, from, to, amount, (a1, a2) -> true));
     }
 
     @Test
