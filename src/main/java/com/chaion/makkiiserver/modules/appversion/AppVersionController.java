@@ -46,6 +46,7 @@ public class AppVersionController {
             appVersion.setPlatform(version.getPlatform().toLowerCase());
             appVersion.setMandatory(version.isMandatory());
             appVersion.setUrl(version.getUrl());
+            appVersion.setReleaseDate(version.getReleaseDate());
             return repo.save(appVersion);
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Version(id=" + version.getId() + ") Not found.");
@@ -111,7 +112,7 @@ public class AppVersionController {
             platforms.add("android");
             platforms.add("ios");
         }
-        return repo.findByPlatformIn(platforms, PageRequest.of(offset, limit));
+        return repo.findByPlatformInOrderByReleaseDateDesc(platforms, PageRequest.of(offset, limit));
     }
 
     @ApiOperation(value = "delete app version by id")

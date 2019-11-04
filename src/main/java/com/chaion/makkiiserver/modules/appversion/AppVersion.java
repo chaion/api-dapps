@@ -20,6 +20,8 @@ public class AppVersion {
     @ApiModelProperty(allowableValues = "iOS, Android", example = "Android")
     private String platform;
 
+    private String releaseDate;
+
     @ApiModelProperty(value="mandatory means all previous app version under the same platform " +
             "should not be used any more.")
     private Boolean mandatory;
@@ -95,6 +97,14 @@ public class AppVersion {
         this.url = url;
     }
 
+    public String getReleaseDate() {
+        return releaseDate;
+    }
+
+    public void setReleaseDate(String releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
     @Override
     public String toString() {
         return "AppVersion{" +
@@ -102,6 +112,7 @@ public class AppVersion {
                 ", version='" + version + '\'' +
                 ", versionCode=" + versionCode +
                 ", platform='" + platform + '\'' +
+                ", releaseDate='" + releaseDate + '\'' +
                 ", mandatory=" + mandatory +
                 ", updatesMap=" + updatesMap +
                 ", url='" + url + '\'' +

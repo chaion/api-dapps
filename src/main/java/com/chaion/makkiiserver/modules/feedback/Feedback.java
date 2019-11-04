@@ -12,7 +12,9 @@ public class Feedback {
     private String id;
     private String feedback;
     private String platform;
+    private String appVersion;
     private String osVersion;
+    private String phoneBrand;
     private String phoneModel;
     private String contact;
     private List<String> imageUrls;

@@ -35,9 +35,7 @@ public class ConfigController {
 
     @PostMapping("/{module}")
     public void updateModuleParam(@PathVariable("module") String module, @RequestBody Map<String, String> params) {
-
         ModuleConfig config = repo.findFirstByModuleNameIgnoreCase(module);
-        Map<String, String> oldParams = config.getModuleParams();
         config.setModuleParams(params);
         repo.save(config);
     }

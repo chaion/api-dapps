@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,8 +26,15 @@ public class FileController {
     StorageService storageService;
 
     @PostMapping("/image/upload")
-    @ResponseBody
     public String upload(@RequestParam(value = "file") MultipartFile file) {
+        return saveFile(file);
+    }
+
+    private String saveFile(MultipartFile file) {
+        logger.info("upload file: originalname:{} name:{} contenttype:{}",
+                file.getOriginalFilename(),
+                file.getName(),
+                file.getContentType());
         String newFilename = UUID.randomUUID().toString() + ".png";
         try {
             String targetPath = "/image/" + newFilename;
@@ -35,6 +44,17 @@ public class FileController {
             logger.error("failed to save file " + file.getName(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file " + file.getName());
         }
+    }
+
+    @PostMapping("/image/uploads")
+    public List<String> uploads(@RequestParam("files") MultipartFile[] files) {
+        List<String> paths = new ArrayList<>();
+        if (files != null && files.length > 0) {
+            for (MultipartFile file : files) {
+                paths.add(saveFile(file));
+            }
+        }
+        return paths;
     }
 
     @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_PNG_VALUE)
