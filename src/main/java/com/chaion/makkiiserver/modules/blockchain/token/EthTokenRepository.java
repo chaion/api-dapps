@@ -1,6 +1,5 @@
-package com.chaion.makkiiserver.modules.token;
+package com.chaion.makkiiserver.modules.blockchain.token;
 
-import com.chaion.makkiiserver.modules.token.EthToken;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;

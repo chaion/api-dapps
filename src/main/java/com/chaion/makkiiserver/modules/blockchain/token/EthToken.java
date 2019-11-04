@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.modules.token;
+package com.chaion.makkiiserver.modules.blockchain.token;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

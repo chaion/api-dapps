@@ -1,4 +1,4 @@
-package com.chaion.makkiiserver.modules.token;
+package com.chaion.makkiiserver.modules.blockchain.token;
 
 import com.chaion.makkiiserver.blockchain.eth.PokketEthTokenProvider;
 import com.chaion.makkiiserver.exception.CodedErrorEnum;
@@ -27,7 +27,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

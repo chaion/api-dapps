@@ -2,9 +2,9 @@ package com.chaion.makkiiserver.blockchain.eth;
 
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
 import com.chaion.makkiiserver.blockchain.BlockchainException;
-import com.chaion.makkiiserver.modules.token.EthToken;
+import com.chaion.makkiiserver.modules.blockchain.token.EthToken;
 import com.chaion.makkiiserver.blockchain.TransactionStatus;
-import com.chaion.makkiiserver.modules.token.EthTokenRepository;
+import com.chaion.makkiiserver.modules.blockchain.token.EthTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

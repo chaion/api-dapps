@@ -6,7 +6,7 @@ import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
 import com.chaion.makkiiserver.modules.news.CoinVoiceService;
 import com.chaion.makkiiserver.modules.pokket.PokketService;
-import com.chaion.makkiiserver.modules.token.EthTokenRepository;
+import com.chaion.makkiiserver.modules.blockchain.token.EthTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
