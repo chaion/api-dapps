@@ -28,3 +28,9 @@ db.moduleConfig.insert({"moduleName": "BlockchainExplorer", "enabled": false})
 ```
 db.moduleConfig.insert({"moduleName": "News", "enabled": false})
 ```
+
+### Aion Staking
+##### mongo init script
+```
+db.moduleConfig.insert({"moduleName": "AionStaking", "enabled": false})
+```

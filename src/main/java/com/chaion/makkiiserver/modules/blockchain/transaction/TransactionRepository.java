@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TransactionRepository extends MongoRepository<SimpleTransaction, String> {
-    SimpleTransaction findFirstByChainAndTxHash(String chain, String txHash);
+    SimpleTransaction findFirstByChainAndTxHashAndAddress(String chain, String txHash, String address);
 }

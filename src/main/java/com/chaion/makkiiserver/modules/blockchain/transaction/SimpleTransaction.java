@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 public class SimpleTransaction {
     @Id
     private String id;
+    private String address;
     private String txHash;
     private String chain;
     private String note;

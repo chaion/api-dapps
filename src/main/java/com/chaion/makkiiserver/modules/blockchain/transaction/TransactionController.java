@@ -16,17 +16,21 @@ public class TransactionController {
     TransactionRepository txRepo;
 
     @PostMapping
-    public void updateTransaction(@RequestBody SimpleTransaction req) {
-        SimpleTransaction tx = txRepo.findFirstByChainAndTxHash(req.getChain(), req.getTxHash());
+    public SimpleTransaction updateTransaction(@RequestBody SimpleTransaction req) {
+        SimpleTransaction tx = txRepo.findFirstByChainAndTxHashAndAddress(req.getChain(), req.getTxHash(), req.getAddress());
         if (tx != null) {
             tx.setNote(req.getNote());
+            return txRepo.save(tx);
+        } else {
+            return txRepo.save(req);
         }
-        txRepo.save(tx);
     }
 
     @GetMapping
-    public SimpleTransaction getTransaction(@RequestBody SimpleTransaction req) {
-        SimpleTransaction tx = txRepo.findFirstByChainAndTxHash(req.getChain(), req.getTxHash());
+    public SimpleTransaction getTransaction(@RequestParam("chain") String chain,
+                                            @RequestParam("txHash") String txHash,
+                                            @RequestParam("address") String address) {
+        SimpleTransaction tx = txRepo.findFirstByChainAndTxHashAndAddress(chain, txHash, address);
         if (tx != null) return tx;
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
