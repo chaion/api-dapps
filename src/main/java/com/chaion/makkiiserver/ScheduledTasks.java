@@ -68,7 +68,9 @@ public class ScheduledTasks {
         ethService.checkPendingTxStatus();
     }
 
+    // production
 //    @Scheduled(fixedRate = 10 * 60 * 1000)
+    // test
     @Scheduled(fixedRate = 15 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();

@@ -85,7 +85,7 @@ public class NewsService {
             NewsItem item = NewsItem.fromSyndEntry(entry);
             item.setSource(name);
 
-            if (repo.findById(item.getId()) == null) {
+            if (repo.findById(item.getId()).isEmpty()) {
                 repo.save(item);
             }
         }
