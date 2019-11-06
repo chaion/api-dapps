@@ -20,8 +20,15 @@ db.moduleConfig.insert({"moduleName": "BlockchainExplorer", "enabled": false})
 ### News
 ``` json
 {
-    "zh": ["ChainNews", "CoinVoice"],
-    "en": []
+    "zh": [
+        { "name": "ChainNews", "enabled": true}, 
+        { "name": "CoinVoice", "feed":"http://www.coinvoice.cn/feed", "enabled": true} 
+    ],
+    "en": [
+        { "name": "UTB", "feed": "https://usethebitcoin.com/feed/", "enabled": true},
+        { "name": "Cointelegraph", "feed": "https://cointelegraph.com/rss", "enabled": true},
+        { "name": "Bitcoin.com", "feed": "https://news.bitcoin.com/feed/", "enabled": true}
+    ]
 }
 ```
 ##### mongo init script

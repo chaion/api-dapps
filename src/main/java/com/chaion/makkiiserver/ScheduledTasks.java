@@ -4,7 +4,7 @@ import com.chaion.makkiiserver.blockchain.aion.AionService;
 import com.chaion.makkiiserver.blockchain.btc.BtcService;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import com.chaion.makkiiserver.modules.coinmarket.CurrencyService;
-import com.chaion.makkiiserver.modules.news.CoinVoiceService;
+import com.chaion.makkiiserver.modules.news.NewsService;
 import com.chaion.makkiiserver.modules.pokket.PokketService;
 import com.chaion.makkiiserver.modules.blockchain.token.EthTokenRepository;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class ScheduledTasks {
     private PokketService pokketService;
 
     @Autowired
-    private CoinVoiceService coinVoiceService;
+    private NewsService newsService;
 
     /**
      * Fetch currency rate every 30 minutes
@@ -54,9 +54,9 @@ public class ScheduledTasks {
     @Scheduled(fixedRate = 60 * 60 * 1000)
     public void refreshNews() {
         try {
-            coinVoiceService.fetch();
+            newsService.fetchAll();
         } catch (Exception e) {
-            logger.error("fetch coin voice news failed: ", e.getMessage());
+            logger.error("fetch news failed: ", e.getMessage());
         }
     }
 

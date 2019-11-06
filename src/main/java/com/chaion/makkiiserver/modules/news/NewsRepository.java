@@ -6,8 +6,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CoinVoiceRepository extends MongoRepository<CoinVoiceItem, String> {
+public interface NewsRepository extends MongoRepository<NewsItem, String> {
 
-    Page<CoinVoiceItem> findAllByOrderByPubDateDesc(Pageable page);
+    Page<NewsItem> findBySourceOrderByPubDateDesc(String source, Pageable page);
 
 }

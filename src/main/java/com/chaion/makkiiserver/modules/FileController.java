@@ -21,7 +21,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping
 public class FileController {
+
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+
     @Autowired
     StorageService storageService;
 
@@ -31,10 +33,6 @@ public class FileController {
     }
 
     private String saveFile(MultipartFile file) {
-        logger.info("upload file: originalname:{} name:{} contenttype:{}",
-                file.getOriginalFilename(),
-                file.getName(),
-                file.getContentType());
         String newFilename = UUID.randomUUID().toString() + ".png";
         try {
             String targetPath = "/image/" + newFilename;

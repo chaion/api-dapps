@@ -2,11 +2,16 @@ package com.chaion.makkiiserver;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Utils {
     /**
@@ -43,5 +48,22 @@ public class Utils {
             stringBuilder.append(hv);
         }
         return stringBuilder.toString();
+    }
+
+    public static String resource2String(Resource resource) throws IOException {
+        Reader reader = new InputStreamReader(resource.getInputStream(), UTF_8);
+        return FileCopyUtils.copyToString(reader);
+    }
+
+    public static String inputStream2String(InputStream in) throws IOException {
+        StringBuilder s = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader
+                (in, Charset.forName(StandardCharsets.UTF_8.name())))) {
+            int c = 0;
+            while ((c = reader.read()) != -1) {
+                s.append((char) c);
+            }
+        }
+        return s.toString();
     }
 }
