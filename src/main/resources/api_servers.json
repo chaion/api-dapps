@@ -3,7 +3,7 @@
     "aion": {
       "networks": {
         "mastery": {
-          "jsonrpc": "https://staking.chaion.net/rpc",
+          "jsonrpc": "https://aion.api.nodesmith.io/v1/mastery/jsonrpc?apiKey=c8b8ebb4f10f40358b635afae72c2780",
           "explorer_api": "https://mastery-api.aion.network",
           "explorer": "https://mastery.aion.network/#/transaction"
         }
