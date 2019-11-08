@@ -1,22 +1,19 @@
 {
   "coins": {
-    "aion": {
+    "eth": {
       "networks": {
-        "mastery": {
-          "jsonrpc": "https://aion.api.nodesmith.io/v1/mastery/jsonrpc?apiKey=c8b8ebb4f10f40358b635afae72c2780",
-          "explorer_api": "https://mastery-api.aion.network",
-          "explorer": "https://mastery.aion.network/#/transaction"
+        "mainnet": {
+          "explorer_api": {
+            "provider": "etherscan",
+            "url": "https://api.etherscan.io/api"
+          },
+          "explorer": {
+            "provider": "etherchain",
+            "url": "https://www.etherchain.org/tx"
+          }
         }
-      }
-    },
-    "btc": {
-      "networks": {
-        "BTCTEST": {
-          "jsonrpc": "http://172.104.190.127:3001/api",
-          "explorer": "http://172.104.190.127:3001/tx/",
-          "broadcast": "http://172.104.190.127:3001/api/tx/send"
-        }
-      }
+      },
+      "ethplorerApiKey": "freekey"
     }
   }
 }
