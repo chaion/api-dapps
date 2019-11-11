@@ -1,5 +1,14 @@
 {
   "coins": {
+    "btc": {
+      "networks": {
+        "BTCTEST": {
+          "jsonrpc": "http://172.104.190.127:3001/api",
+          "explorer": "http://172.104.190.127:3001/tx/",
+          "broadcast": "http://172.104.190.127:3001/api/tx/send"
+        }
+      }
+    },
     "eth": {
       "networks": {
         "mainnet": {
@@ -8,8 +17,8 @@
             "url": "https://api.etherscan.io/api"
           },
           "explorer": {
-            "provider": "etherchain",
-            "url": "https://www.etherchain.org/tx"
+            "provider": "etherscan",
+            "url": "https://etherscan.io/tx"
           }
         }
       },
