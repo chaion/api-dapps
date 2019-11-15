@@ -15,5 +15,8 @@ public interface AppVersionRepository extends MongoRepository<AppVersion, String
     @Query("{'platform': {$regex: '?0', $options: 'i'}, 'mandatory': ?1, 'versionCode': { $gt: ?2}}")
     List<AppVersion> findMandatoryVersions(String platform, boolean isMandatory, int versionCode);
 
-    Page<AppVersion> findByPlatformInOrderByReleaseDateDesc(List<String> platforms, Pageable page);
+    Page<AppVersion> findByVersionCodeLessThanEqualAndPlatformInOrderByReleaseDateDesc(
+            int maxVersionCode,
+            List<String> platforms,
+            Pageable page);
 }

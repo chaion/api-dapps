@@ -103,7 +103,8 @@ public class AppVersionController {
     @GetMapping
     public Page<AppVersion> getAppVersions(@RequestParam(value = "offset") int offset,
                                            @RequestParam(value = "size") int limit,
-                                           @RequestParam(value = "platform", required = false) String platform) {
+                                           @RequestParam(value = "platform", required = false) String platform,
+                                           @RequestParam(value = "versionCode", required = false) Integer versionCode) {
         List<String> platforms;
         if (platform != null && !platform.isEmpty()) {
             platforms = Arrays.asList(platform.toLowerCase().split(","));
@@ -112,7 +113,11 @@ public class AppVersionController {
             platforms.add("android");
             platforms.add("ios");
         }
-        return repo.findByPlatformInOrderByReleaseDateDesc(platforms, PageRequest.of(offset, limit));
+        if (versionCode == null) {
+            versionCode = Integer.MAX_VALUE;
+        }
+        return repo.findByVersionCodeLessThanEqualAndPlatformInOrderByReleaseDateDesc(versionCode, platforms,
+                PageRequest.of(offset, limit));
     }
 
     @ApiOperation(value = "delete app version by id")
