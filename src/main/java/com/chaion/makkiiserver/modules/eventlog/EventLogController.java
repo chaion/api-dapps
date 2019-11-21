@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -19,6 +21,7 @@ public class EventLogController {
     @Autowired
     EventLogRepository eventlogRepo;
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Add an event log")
     @PutMapping
     public EventLog addEventLog(@RequestBody EventLog eventLog) {
@@ -28,6 +31,7 @@ public class EventLogController {
         return eventlogRepo.insert(eventLog);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value = "get event logs")
     @GetMapping
     public Page<EventLog> getEventLogs(@RequestParam(value = "offset") int offset,

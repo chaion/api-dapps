@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,6 +31,7 @@ public class ExchangeController {
     @Autowired
     RedisTemplate redisTemplate;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get erc 20 price: erc20 -> fiat currency")
     @GetMapping(value="/market/erc20/price")
     public List<MarketPrice> getERC20TokenPrice(
@@ -55,6 +57,7 @@ public class ExchangeController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get exchange rate: crypto currency->fiat currency")
     @GetMapping(value="/market/price")
     public MarketPrice getPrice(
@@ -66,6 +69,7 @@ public class ExchangeController {
         return getPriceInternal(crypto, fiat);
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="refer to /market/price",
             notes = "same with /market/price api, legacy api to be compatible with app version 0.0.1")
     @GetMapping(value="/price")
@@ -92,6 +96,7 @@ public class ExchangeController {
                 crypto + "<->" + fiat + " exchange rate not found.");
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get batches of exchange rates: crypto currencies -> fiat currencies")
     @GetMapping(value="/market/prices")
     public List<MarketPrice> getPrices(

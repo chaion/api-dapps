@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -33,6 +34,7 @@ public class ConfigController {
     @Autowired
     ModuleConfigRepository repo;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @GetMapping(value = "/apiServers")
     @ResponseBody
     public String apiServerConfig() {
@@ -47,11 +49,13 @@ public class ConfigController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping("/modules")
     public void addModule(@RequestBody ModuleConfig moduleConfig) {
         repo.save(moduleConfig);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/{module}/{enable}")
     public void enableModule(@PathVariable("module") String module, @PathVariable("enable") String enable) {
         ModuleConfig config = repo.findFirstByModuleNameIgnoreCase(module);
@@ -60,6 +64,7 @@ public class ConfigController {
         repo.save(config);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/{module}")
     public void updateModuleParam(@PathVariable("module") String module, @RequestBody Map<String, String> params) {
         ModuleConfig config = repo.findFirstByModuleNameIgnoreCase(module);
@@ -67,6 +72,7 @@ public class ConfigController {
         repo.save(config);
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @GetMapping(value = "/modules", produces = "application/json; charset=utf-8")
     public String getModules() {
         JsonArray modules = new JsonArray();
@@ -98,6 +104,7 @@ public class ConfigController {
         return modules.toString();
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Load default configurations", response=DefaultConfig.class)
     @GetMapping
     public DefaultConfig getDefaultConfig() {

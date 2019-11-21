@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,6 +47,7 @@ public class PokketController {
     @Autowired
     ModuleConfigRepository moduleRepo;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @PutMapping("/order")
     public PokketOrder createOrder(@RequestBody CreateOrderReq req) {
         try {
@@ -131,6 +133,7 @@ public class PokketController {
         });
     }
 
+    @PreAuthorize("hasRole('ROLE_POKKETAPI')")
     @ApiOperation(value="每日备用金净值清算后调用")
     @PostMapping("/order/collateralSettlement")
     public void collateralSettlement(@RequestBody CollateralSettlementReq collateralSettlementReq) {
@@ -271,6 +274,7 @@ public class PokketController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_POKKETAPI')")
     @ApiOperation(value="每日完成订单通知")
     @PostMapping("/order/complete")
     public List<String> finishOrders(@RequestBody List<FinishOrderReq> finishOrderReqList) {
@@ -448,6 +452,8 @@ public class PokketController {
         return true;
     }
 
+
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get investors' orders")
     @GetMapping("/order")
     public Page<PokketOrder> getOrder(@RequestBody GetOrderReq getOrderReq) {
@@ -459,11 +465,13 @@ public class PokketController {
         return orders;
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/getorders")
     public Page<PokketOrder> getOrders(@RequestBody QueryOrderReq req) {
         return repo.findAdvanced(req);
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get all financial products")
     @GetMapping("/product")
     public List<PokketProduct> getProducts(@RequestParam(value="search", required = false) String search) {
@@ -473,6 +481,7 @@ public class PokketController {
 //        }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Get pokket's total deposit amount, including deposits on pokket's website")
     @GetMapping("/statistic/totalInvestment")
     public BigDecimal getTotalInvestment() {
@@ -483,6 +492,7 @@ public class PokketController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get pokket's Bitcoin address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/btc_address")
     public String getDepositBtcAddress() {
@@ -493,6 +503,7 @@ public class PokketController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get pokket's ethereum address which investors should transfer ETH/ERC20 to")
     @GetMapping("/deposit/eth_address")
     public String getDepositEthAddress() {
@@ -503,6 +514,7 @@ public class PokketController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Get pokket financial banner images for advertisement use.",
         notes = "response is an array containing image download url")
     @GetMapping("/banners")
@@ -526,6 +538,7 @@ public class PokketController {
         return banners;
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/resolveOrder/{orderId}")
     public void resolveError(@PathVariable("orderId") String orderId) {
         PokketOrder order = getOrder(orderId);

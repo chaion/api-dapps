@@ -81,7 +81,7 @@ public class ScheduledTasks {
         aionService.checkPendingTxStatus();
     }
 
-//    @Scheduled(fixedRate = 10 * 1000)
+    @Scheduled(fixedRate = 10 * 1000)
     public void refreshPokketProductList() {
         pokketService.refreshProductList();
     }

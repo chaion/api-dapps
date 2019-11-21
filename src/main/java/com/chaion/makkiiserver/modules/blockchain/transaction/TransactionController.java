@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -15,6 +16,7 @@ public class TransactionController {
     @Autowired
     TransactionRepository txRepo;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @PostMapping
     public SimpleTransaction updateTransaction(@RequestBody SimpleTransaction req) {
         SimpleTransaction tx = txRepo.findFirstByChainAndTxHashAndAddress(req.getChain(), req.getTxHash(), req.getAddress());
@@ -26,6 +28,7 @@ public class TransactionController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @GetMapping
     public SimpleTransaction getTransaction(@RequestParam("chain") String chain,
                                             @RequestParam("txHash") String txHash,

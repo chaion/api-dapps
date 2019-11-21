@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -57,6 +58,7 @@ public class TokenController {
     // ----------------------------------------------------------------
     // ----------------------- Aion Token -----------------------------
     // ----------------------------------------------------------------
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get Aion tokens by page",
             response=ATSToken.class,
             produces = "application/json")
@@ -70,6 +72,7 @@ public class TokenController {
         return aionRepo.findAll(page).getContent();
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Search aion tokens by contract address or coin name",
         response=ATSToken.class,
         produces = "application/json")
@@ -88,6 +91,7 @@ public class TokenController {
         return aionRepo.findByName(keyword);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Refresh all ATS tokens information. ",
             notes = "This api will crawl aion explorer website and http request may time out.")
     @PostMapping("/aion/refresh")
@@ -160,6 +164,7 @@ public class TokenController {
     // ----------------------------------------------------------------
     // ----------------------- ETH Token -----------------------------
     // ----------------------------------------------------------------
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Add Eth token",
             notes = "tokens in db are crawled from etherscan.io. if some tokens are missing in etherscan, we can use this interface to add.")
     @PutMapping("/eth")
@@ -167,6 +172,7 @@ public class TokenController {
         return ethRepo.insert(token);
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get/Search ERC20 tokens by page",
             notes = "if keyword parameter is not present, this api will return all eth tokens by page; " +
                     "if it is present and is an address format, this api will do a full match against address; " +
@@ -196,6 +202,7 @@ public class TokenController {
 //        }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @GetMapping("/eth/popular")
     public List<EthToken> getEthPopularTokens() {
 //        if (appEnv.equalsIgnoreCase("pokket")) {
@@ -219,6 +226,7 @@ public class TokenController {
 //        }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @GetMapping("/eth/token_name")
     public List<EthToken> getEthTokenByTokenName(@RequestParam(value="token_name") String tokenName) {
 //        if (appEnv.equalsIgnoreCase("pokket")) {
@@ -228,6 +236,7 @@ public class TokenController {
 //        }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get eth token icon")
     @GetMapping("/eth/img")
     public ResponseEntity<Resource> getEthTokenIcon(
@@ -257,6 +266,7 @@ public class TokenController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Refresh all ERC-20 tokens information. ",
             notes = "This api will crawl etherscan.io website and http request may time out")
     @PostMapping("/eth/refresh")

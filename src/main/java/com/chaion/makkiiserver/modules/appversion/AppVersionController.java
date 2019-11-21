@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,6 +24,7 @@ public class AppVersionController {
     @Autowired
     AppVersionRepository repo;
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Add a new app version",
             response=AppVersion.class,
             produces = "application/json")
@@ -32,6 +34,7 @@ public class AppVersionController {
         return repo.insert(version);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value="Update an existing app version",
             response=AppVersion.class,
             produces = "application/json")
@@ -52,6 +55,8 @@ public class AppVersionController {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Version(id=" + version.getId() + ") Not found.");
     }
 
+
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get the latest app version",
             notes = "The returned version's mandatory is true if any version later than the given one is mandatory.",
             response=AppVersion.class,
@@ -99,6 +104,7 @@ public class AppVersionController {
         return appVersion;
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MAKKII')")
     @ApiOperation(value = "get app version by page")
     @GetMapping
     public Page<AppVersion> getAppVersions(@RequestParam(value = "offset") int offset,
@@ -120,6 +126,7 @@ public class AppVersionController {
                 PageRequest.of(offset, limit));
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ApiOperation(value = "delete app version by id")
     @DeleteMapping
     public void deleteAppVersions(@RequestParam(value = "id") String id) {

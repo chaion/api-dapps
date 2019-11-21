@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,6 +28,7 @@ public class FileController {
     @Autowired
     StorageService storageService;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @PostMapping("/image/upload")
     public String upload(@RequestParam(value = "file") MultipartFile file) {
         return saveFile(file);
@@ -44,6 +46,7 @@ public class FileController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @PostMapping("/image/uploads")
     public List<String> uploads(@RequestParam("files") MultipartFile[] files) {
         List<String> paths = new ArrayList<>();
@@ -55,6 +58,7 @@ public class FileController {
         return paths;
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_PNG_VALUE)
     @ResponseBody
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {

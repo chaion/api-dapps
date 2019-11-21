@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -26,6 +27,7 @@ public class JsonRpcController {
     @Autowired
     EthService ethService;
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @PostMapping
     public String jsonrpc(@RequestBody String payload) throws BlockchainException {
         JsonObject root = new JsonParser().parse(payload).getAsJsonObject();
@@ -123,6 +125,7 @@ public class JsonRpcController {
         throw new BlockchainException("unsupported method: " + method);
     }
 
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @GetMapping("/eth/transactionByHash")
     public String transactionByHash(@RequestParam("txId") String txHash) throws BlockchainException {
         Transaction transaction = ethService.getTransaction(txHash);
