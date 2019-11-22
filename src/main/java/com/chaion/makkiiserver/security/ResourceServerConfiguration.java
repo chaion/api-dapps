@@ -7,22 +7,28 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 
+/**
+ * only resource server for all makkii resources.
+ */
 @Configuration
 @EnableResourceServer
 public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
 
+    private final String RESOURCE_ID_MAKKII = "makkii";
+
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-        resources.resourceId("*").stateless(true);
+        resources.resourceId(RESOURCE_ID_MAKKII).stateless(true);
     }
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http
+                .cors()
+                .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .antMatchers("/pokket/**").access("#oauth2.hasScope('pokket')")
                 .anyRequest().authenticated();
     }
 }

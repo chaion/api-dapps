@@ -8,14 +8,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 
 @Configuration
 public class WebMvcConfig extends WebMvcConfigurationSupport {
-    @Override
-    protected void addCorsMappings(CorsRegistry registry) {
-        super.addCorsMappings(registry);
-        registry.addMapping("/**")
-                .allowedOrigins("*")
-                .allowCredentials(true)
-                .allowedMethods("POST", "GET", "PUT", "OPTIONS", "DELETE");
-    }
+    // useless after adding spring security
+//    @Override
+//    protected void addCorsMappings(CorsRegistry registry) {
+//        super.addCorsMappings(registry);
+//        registry.addMapping("/**")
+//                .allowedOrigins("*")
+//                .allowedHeaders("*")
+//                .allowCredentials(true)
+//                .allowedMethods("POST", "GET", "PUT", "OPTIONS", "DELETE");
+//    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

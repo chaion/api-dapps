@@ -21,7 +21,7 @@ public class EventLogController {
     @Autowired
     EventLogRepository eventlogRepo;
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Add an event log")
     @PutMapping
     public EventLog addEventLog(@RequestBody EventLog eventLog) {
