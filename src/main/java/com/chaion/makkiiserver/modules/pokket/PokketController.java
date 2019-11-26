@@ -454,11 +454,11 @@ public class PokketController {
 
 
     @ApiOperation(value="Get investors' orders")
-    @GetMapping("/order")
+    @PostMapping("/order")
     public Page<PokketOrder> getOrder(@RequestBody GetOrderReq getOrderReq) {
         List<String> addressList = getOrderReq.getAddresses();
 
-        Sort sort = new Sort(Sort.Direction.DESC, "status", "createTime");
+        Sort sort = new Sort(Sort.Direction.DESC, "createTime");
         Page<PokketOrder> orders = repo.findByInvestorAddressIn(addressList,
                 PageRequest.of(getOrderReq.getPage(), getOrderReq.getSize(), sort));
         return orders;

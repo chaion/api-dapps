@@ -60,11 +60,14 @@ public class JsonRpcController {
             return resp.toString();
         } else if (method.equalsIgnoreCase("eth_getBlockByNumber")) {
             JsonArray array = root.get("params").getAsJsonArray();
+            BigInteger n;
             String number = array.get(0).getAsString();
             if (number.startsWith("0x")) {
                 number = number.substring(2);
+                n = new BigInteger(number, 16);
+            } else {
+                n = new BigInteger("" + number);
             }
-            BigInteger n = new BigInteger(number, 16);
             EthBlock.Block block = ethService.getBlockByNumber(n);
             JsonObject result = new JsonObject();
 //            result.addProperty("number", "0x" + block.getNumber().toString(16));

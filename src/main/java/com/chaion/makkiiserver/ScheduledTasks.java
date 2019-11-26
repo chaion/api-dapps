@@ -63,7 +63,7 @@ public class ScheduledTasks {
     /**
      * check pending transaction status every 10 seconds
      */
-//    @Scheduled(fixedRate = 10 * 1000)
+   @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingEthTxStatus() {
         ethService.checkPendingTxStatus();
     }
@@ -71,7 +71,7 @@ public class ScheduledTasks {
     // production
 //    @Scheduled(fixedRate = 10 * 60 * 1000)
     // test
-//    @Scheduled(fixedRate = 15 * 1000)
+   @Scheduled(fixedRate = 15 * 1000)
     public void checkPendingBtcTxStatus() {
         btcService.checkPendingTxStatus();
     }

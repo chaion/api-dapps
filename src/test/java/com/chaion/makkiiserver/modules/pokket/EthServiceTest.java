@@ -1,5 +1,6 @@
 package com.chaion.makkiiserver.modules.pokket;
 
+import com.chaion.makkiiserver.blockchain.BlockchainException;
 import com.chaion.makkiiserver.blockchain.eth.EthService;
 import org.junit.Assert;
 import org.junit.Test;
@@ -7,8 +8,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.web3j.protocol.core.methods.response.EthBlock;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
