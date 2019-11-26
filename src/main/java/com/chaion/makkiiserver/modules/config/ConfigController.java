@@ -3,23 +3,20 @@ package com.chaion.makkiiserver.modules.config;
 import com.chaion.makkiiserver.Utils;
 import com.chaion.makkiiserver.repository.file.StorageException;
 import com.chaion.makkiiserver.repository.file.StorageService;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.system.ApplicationHome;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,14 +35,49 @@ public class ConfigController {
     @GetMapping(value = "/apiServers")
     @ResponseBody
     public String apiServerConfig() {
-        // TODO: optimize: be able to update api servers without restarting server
+        ApplicationHome home = new ApplicationHome(getClass());
+        File jarFile = home.getSource();
+        File jarDir = jarFile.getParentFile();
+        logger.info(jarDir.getAbsolutePath());
+        File apiServerFile = new File(jarDir, "config/api_server.json");
         try {
-            ClassPathResource classPathResource = new ClassPathResource("api_servers.json");
-            InputStream in = classPathResource.getInputStream();
-            return Utils.inputStream2String(in);
+            return Utils.inputStream2String(new FileInputStream(apiServerFile));
         } catch (IOException e) {
-            logger.error("load file failed: ", e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "api_servers.json not found");
+            logger.error("load file failed: ", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "api_server.json not found");
+        }
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping(value = "/apiServers")
+    public void updateApiServerConfig(@RequestBody String apiServerJson) {
+        // validate json
+        try {
+            new JsonParser().parse(apiServerJson);
+        } catch (JsonSyntaxException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid api server json");
+        }
+
+        ApplicationHome home = new ApplicationHome(getClass());
+        File jarFile = home.getSource();
+        File jarDir = jarFile.getParentFile();
+        File apiServerFile = new File(jarDir, "config/api_server.json");
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(apiServerFile);
+            fw.write(apiServerJson);
+            fw.flush();
+        } catch (Exception e) {
+            logger.error("write api_server.json failed");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "write api_server.json failed:" + e.getMessage());
+        } finally {
+            if (fw != null) {
+                try {
+                    fw.close();
+                } catch (IOException e1) {
+                }
+            }
         }
     }
 

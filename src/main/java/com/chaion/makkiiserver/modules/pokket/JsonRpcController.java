@@ -27,7 +27,6 @@ public class JsonRpcController {
     @Autowired
     EthService ethService;
 
-    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @PostMapping
     public String jsonrpc(@RequestBody String payload) throws BlockchainException {
         JsonObject root = new JsonParser().parse(payload).getAsJsonObject();
@@ -125,7 +124,6 @@ public class JsonRpcController {
         throw new BlockchainException("unsupported method: " + method);
     }
 
-    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @GetMapping("/eth/transactionByHash")
     public String transactionByHash(@RequestParam("txId") String txHash) throws BlockchainException {
         Transaction transaction = ethService.getTransaction(txHash);

@@ -44,13 +44,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .authorizeRequests()
                 .antMatchers(
                         "/oauth/**",
-                        "/pokket/**",
-                        "/token/aion",
-                        "/token/aion/search",
-                        "/token/eth/search/",
-                        "/token/eth/popular",
-                        "/token/eth/token_name",
-                        "/token/eth/img").permitAll();
+                        "/swagger*/**",
+                        "/v2/api-docs"
+                ).permitAll();
     }
 
     @Bean

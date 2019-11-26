@@ -29,6 +29,19 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
+                .antMatchers(
+                        "/swagger*/**",
+                        "/webjars/**",
+                        "/v2/api-docs",
+                        "/pokketchain",
+                        "/pokket/**",
+                        "/token/aion",
+                        "/token/aion/search",
+                        "/token/eth/search/",
+                        "/token/eth/popular",
+                        "/token/eth/token_name",
+                        "/token/eth/img"
+                ).permitAll()
                 .anyRequest().authenticated();
     }
 }
