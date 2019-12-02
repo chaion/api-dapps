@@ -239,7 +239,7 @@ public class PokketController {
                 POKKET_ETH_WALLET_ADDRESS,
                 TUSD,
                 tusdTransfer.abs(),
-                (a1, a2) -> a1.compareTo(a2) <= 0)) {
+                (a1, a2) -> a1.compareTo(a2) >= 0)) {
             String errMsg = String.format("Invalid tusd withdraw txhash %s, expected withdraw amount is %s",
                     transactionHash, tusdTransfer);
             for (PokketOrder order : newOrders) {
