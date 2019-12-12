@@ -58,7 +58,6 @@ public class FileController {
         return paths;
     }
 
-    @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
     @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_PNG_VALUE)
     @ResponseBody
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {

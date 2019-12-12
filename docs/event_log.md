@@ -39,8 +39,6 @@
 ### STAKING_DELEGATE
 ``` json
 {
-    "from": "0x",
-    "to": "0x",
     "pool": "pool name",
     "amount": "1000"
 }
@@ -48,8 +46,6 @@
 ### STAKING_UNDELEGATE
 ``` json
 {
-    "from": "0x",
-    "to": "0x", 
     "pool": "pool name",
     "amount": "1000"
 }
@@ -57,9 +53,9 @@
 ### STAKING_WITHDRAW
 ``` json
 {
-    "from": "0x",
-    "to": "0x",
     "pool": "pool name",
     "amount": "1000"
 }
 ```
+### STAKING_ACCESS
+No Data
