@@ -138,7 +138,7 @@ public class PokketController {
     @ApiOperation(value="每日备用金净值清算后调用")
     @PostMapping("/order/collateralSettlement")
     public void collateralSettlement(@RequestBody CollateralSettlementReq collateralSettlementReq) {
-        List<PokketOrder> closedOrders = repo.findByOrderIdIn(collateralSettlementReq.getClosedOrderIds());
+        List<PokketOrder> closedOrders = repo.findByOrderIdIn(collateralSettlementReq.getClosedOrderIdsReturnTUSD());
         BigDecimal totalWithdrawTUSD = calculateTotalWithdrawCollateral(closedOrders);
 
         List<PokketOrder> newOrders = repo.findByOrderIdIn(collateralSettlementReq.getNewOrderIds());
