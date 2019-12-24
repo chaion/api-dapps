@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 @Service
 public class BtcService extends BaseBlockchain {
@@ -91,7 +92,7 @@ public class BtcService extends BaseBlockchain {
     }
 
     public void checkPendingTxStatus() {
-        logger.info("check pending btc tx status...");
+//        logger.info("check pending btc tx status...");
         for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
             TransactionStatus st = entry.getValue();
             String txId = st.getTxId();
@@ -116,7 +117,11 @@ public class BtcService extends BaseBlockchain {
         }
     }
 
-    public void validateBtcTransaction(String transactionId, String from, String to, BigDecimal amount)
+    public void validateBtcTransaction(String transactionId,
+                                       String from,
+                                       String to,
+                                       BigDecimal expectedAmount,
+                                       BiFunction<BigInteger, BigInteger, Boolean> amountValidator)
             throws BlockchainException {
         BtcTransaction transaction = null;
         try {
@@ -140,7 +145,6 @@ public class BtcService extends BaseBlockchain {
         List<BtcTxVout> vouts = transaction.getVout();
         boolean hasToAndAmount = false;
         for (BtcTxVout vout : vouts) {
-            if (new BigDecimal(vout.getValue()).equals(amount)) {
                 boolean hasAddress = false;
                 for (String address: vout.getScriptPubKey().getAddresses()) {
                     if (address.equalsIgnoreCase(to)) {
@@ -149,10 +153,10 @@ public class BtcService extends BaseBlockchain {
                     }
                 }
                 if (hasAddress) {
+                    logger.info("validate btc amount: " + vout.getValue());
                     hasToAndAmount = true;
                     break;
                 }
-            }
         }
         if (!hasToAndAmount){
             throw new BlockchainException("validate btc transaction(" + transactionId + ") failed: " +

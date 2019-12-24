@@ -176,7 +176,7 @@ public class PokketService {
     public List<PokketProduct> getProducts() throws PokketServiceException {
         String url = baseUrl + "/products/list";
         try {
-            logger.info("calling " + url);
+//            logger.info("calling " + url);
             ResponseEntity<String> response = restClient.getForEntity(url, String.class);
             return parseToProductList(response.getBody());
         } catch (HttpStatusCodeException e) {
@@ -268,7 +268,7 @@ public class PokketService {
      * Load pokket product list and save into cache.
      */
     public void refreshProductList() {
-        logger.info("refresh pokket product list...");
+//        logger.info("refresh pokket product list...");
         try {
             List<PokketProduct> products = getProducts();
             cachedProductList.clear();

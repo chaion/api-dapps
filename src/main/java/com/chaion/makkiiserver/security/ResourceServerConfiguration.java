@@ -36,6 +36,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                         "/webjars/**",
                         "/v2/api-docs",
                         "/pokketchain",
+                        "/pokketchain/**",
                         "/pokket/**",
                         "/token/aion",
                         "/token/aion/search",

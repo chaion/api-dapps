@@ -197,7 +197,7 @@ public class EthService extends BaseBlockchain {
     }
 
     public void checkPendingTxStatus() {
-        logger.info("check pending eth tx status...");
+//        logger.info("check pending eth tx status...");
         for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
             TransactionStatus st = entry.getValue();
             String txHash = st.getTxId();
@@ -332,7 +332,6 @@ public class EthService extends BaseBlockchain {
         try {
             // decode input data
             String method = input.substring(0, 10);
-            logger.info("method: " + method);
             String to = input.substring(10, 74);
             String value = input.substring(74);
             Method refMethod = null;
@@ -421,4 +420,122 @@ public class EthService extends BaseBlockchain {
         }
         return true;
     }
+
+    /**
+     * only for debug purpose as there is no open http jsonrpc channel for aleth ipc
+     */
+    public String debugEthTx(String transactionHash) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("debug eth transaction: transactionHash=" + transactionHash + "\n");
+        EthGetTransactionReceipt receiptResp = null;
+        try {
+            receiptResp = ethWeb3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+        } catch (Exception e) {
+            sb.append("getTransactionReceipt exception: " + e.getMessage() + "\n");
+            return sb.toString();
+        }
+        sb.append("receiptResp: " + receiptResp + "\n");
+        if (receiptResp.hasError()) {
+            sb.append("getTransactionReceipt has error\n");
+            return sb.toString();
+        }
+        Optional<TransactionReceipt> receiptOpt = receiptResp.getTransactionReceipt();
+        if (!receiptOpt.isPresent()) {
+            sb.append("getTransactionReceipt is not present\n");
+            return sb.toString();
+        }
+        TransactionReceipt receipt = receiptOpt.get();
+        sb.append("from:" + receipt.getFrom() + "\n");
+        sb.append("to:" + receipt.getTo() + "\n");
+        sb.append("status:" + receipt.isStatusOK() + "\n");
+
+        EthTransaction transactionResp = null;
+        try {
+            transactionResp = ethWeb3j.ethGetTransactionByHash(transactionHash).sendAsync().get();
+        } catch (Exception e) {
+            sb.append("getTransactionByHash exception: " + e.getMessage() + "\n");
+            return sb.toString();
+        }
+        if (transactionResp.hasError()) {
+            sb.append("getTransactionByHash has error.\n");
+            return sb.toString();
+        }
+        Optional<Transaction> transactionOpt = transactionResp.getTransaction();
+        if (!transactionOpt.isPresent()) {
+            sb.append("getTransactionByHash is not present.\n");
+            return sb.toString();
+        }
+        Transaction transaction = transactionOpt.get();
+        sb.append("value: " + transaction.getValue() + "\n");
+        return sb.toString();
+    }
+
+    /**
+     * only for debug purpose as there is no open http jsonrpc channel for aleth ipc
+     */
+    public String debugErc20Tx(String transactionHash) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("debug erc20 transaction:transactionHash=" + transactionHash + "\n");
+        EthGetTransactionReceipt receiptResp = null;
+        try {
+            receiptResp = ethWeb3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
+        } catch (Exception e) {
+            sb.append("getTransactionReceipt exception: " + e.getMessage() + "\n");
+            return sb.toString();
+        }
+        sb.append("receiptResp: " + receiptResp + "\n");
+        if (receiptResp.hasError()) {
+            sb.append("getTransactionReceipt has error\n");
+            return sb.toString();
+        }
+        Optional<TransactionReceipt> receiptOpt = receiptResp.getTransactionReceipt();
+        if (!receiptOpt.isPresent()) {
+            sb.append("getTransactionReceipt is not present\n");
+            return sb.toString();
+        }
+        TransactionReceipt receipt = receiptOpt.get();
+        sb.append("from:" + receipt.getFrom() + "\n");
+        sb.append("to:" + receipt.getTo() + "\n");
+        sb.append("status:" + receipt.isStatusOK() + "\n");
+
+        EthTransaction transactionResp = null;
+        try {
+            transactionResp = ethWeb3j.ethGetTransactionByHash(transactionHash).sendAsync().get();
+        } catch (Exception e) {
+            sb.append("getTransactionByHash exception: " + e + "\n");
+            return sb.toString();
+        }
+        if (transactionResp.hasError()) {
+            sb.append("getTransactionByHash has error.\n");
+            return sb.toString();
+        }
+        Optional<Transaction> transactionOpt = transactionResp.getTransaction();
+        if (!transactionOpt.isPresent()) {
+            sb.append("getTransactionByHash is not present.\n");
+            return sb.toString();
+        }
+        Transaction transaction = transactionOpt.get();
+        String input = transaction.getInput();
+        sb.append("input:" + input + "\n");
+        try {
+            // decode input data
+            String method = input.substring(0, 10);
+            sb.append("method: " + method + "\n");
+            String to = input.substring(10, 74);
+            sb.append("erc20 raw to:" + to + "\n");
+            String value = input.substring(74);
+            sb.append("erc20 raw value:" + value + "\n");
+            Method refMethod = null;
+            refMethod = TypeDecoder.class.getDeclaredMethod("decode", String.class, int.class, Class.class);
+            refMethod.setAccessible(true);
+            Address address = (Address) refMethod.invoke(null, to, 0, Address.class);
+            Uint256 amount = (Uint256) refMethod.invoke(null, value, 0, Uint256.class);
+            sb.append("erc20 to: " + address.getValue() + "\n");
+            sb.append("erc20 value: " + amount.getValue() + "\n");
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            sb.append("decode input data failed\n");
+        }
+        return sb.toString();
+    }
+
 }

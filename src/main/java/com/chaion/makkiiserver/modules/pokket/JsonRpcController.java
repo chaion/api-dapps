@@ -138,4 +138,24 @@ public class JsonRpcController {
         jo.addProperty("to", transaction.getTo());
         return jo.toString();
     }
+
+    /**
+     * Only for debug
+     * @param txHash
+     * @return
+     */
+    @GetMapping("/eth/debug_erc20")
+    public String debugErc20(@RequestParam("txId") String txHash) {
+        return ethService.debugErc20Tx(txHash);
+    }
+
+    /**
+     * Only for debug
+     * @param txHash
+     * @return
+     */
+    @GetMapping("/eth/debug_eth")
+    public String debugEth(@RequestParam("txId") String txHash) {
+        return ethService.debugEthTx(txHash);
+    }
 }

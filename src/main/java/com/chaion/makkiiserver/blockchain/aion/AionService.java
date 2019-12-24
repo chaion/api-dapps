@@ -74,7 +74,7 @@ public class AionService extends BaseBlockchain {
 
     @Override
     public void checkPendingTxStatus() {
-        logger.info("check pending aion tx status...");
+//        logger.info("check pending aion tx status...");
         for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
             TransactionStatus st = entry.getValue();
             String txHash = st.getTxId();

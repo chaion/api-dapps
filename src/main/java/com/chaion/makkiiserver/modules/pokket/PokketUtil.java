@@ -12,7 +12,6 @@ public class PokketUtil {
 
     public static final String POKKET_BTC_WALLET_ADDRESS = null;
     public static final String POKKET_ETH_WALLET_ADDRESS = null;
-    public static final String MAKKII_WALLET_ADDRESS = null;
     /**
      * increase rate to determine whether return tusd.
      */
