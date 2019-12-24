@@ -112,28 +112,33 @@ public class PokketController {
     private void watchInvestTx(CreateOrderReq req, String orderId, long currentTime,
                                String txId, BaseBlockchain blockchain) {
         blockchain.addPendingTransaction(txId, (transactionHash, status) -> {
-            PokketOrder order = getOrder(orderId);
-            if (status) {
-                logger.info("[pokket] invest transaction {} is confirmed as success", txId);
-                Long pokketOrderId = null;
-                try {
-                    pokketOrderId = pokketService.createOrder(orderId,
-                            req.getProductId(),
-                            req.getInvestorAddress(),
-                            req.getCollateralAddress(),
-                            req.getAmount(),
-                            currentTime,
-                            transactionHash);
-                    order.setPokketOrderId(pokketOrderId);
-                    logger.info("[pokket] notify new order to pokket server: pokket order id=" + pokketOrderId);
-                    order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
-                    logger.info("[pokket] update status to WAIT_COLLATERAL_DEPOSIT");
-                    repo.save(order);
-                } catch (Exception e) {
-                    updateErrorStatus(order, "call pokket /deposit/deposit exception: " + e.getMessage());
+            Optional<PokketOrder> orderOpt = repo.findById(orderId);
+            if (orderOpt.isPresent()) {
+                PokketOrder order = orderOpt.get();
+                if (status) {
+                    logger.info("[pokket] invest transaction {} is confirmed as success", txId);
+                    Long pokketOrderId = null;
+                    try {
+                        pokketOrderId = pokketService.createOrder(orderId,
+                                req.getProductId(),
+                                req.getInvestorAddress(),
+                                req.getCollateralAddress(),
+                                req.getAmount(),
+                                currentTime,
+                                transactionHash);
+                        order.setPokketOrderId(pokketOrderId);
+                        logger.info("[pokket] notify new order to pokket server: pokket order id=" + pokketOrderId);
+                        order.setStatus(PokketOrderStatus.WAIT_COLLATERAL_DEPOSIT);
+                        logger.info("[pokket] update status to WAIT_COLLATERAL_DEPOSIT");
+                        repo.save(order);
+                    } catch (Exception e) {
+                        updateErrorStatus(order, "call pokket /deposit/deposit exception: " + e.getMessage());
+                    }
+                } else {
+                    updateErrorStatus(order, String.format("invest transaction %s is confirmed as failure" ,txId));
                 }
             } else {
-                updateErrorStatus(order, String.format("invest transaction %s is confirmed as failure" ,txId));
+                logger.error(orderId + " doesn't exist, can't create pokket order.");
             }
         });
     }
@@ -309,19 +314,25 @@ public class PokketController {
      * @return
      */
     private boolean handleResultGreaterThan(String orderId, String txHashYieldTUSD) {
-        PokketOrder order = getOrder(orderId);
-        order.setResult(PokketOrderResult.GREATER_THAN);
-        if (txHashYieldTUSD == null) {
-            updateErrorStatus(order, String.format("Finish order(%s) failed: txHashYieldTUSD=%s", txHashYieldTUSD));
+        Optional<PokketOrder> orderOpt = repo.findById(orderId);
+        if (orderOpt.isPresent()) {
+            PokketOrder order = orderOpt.get();
+            order.setResult(PokketOrderResult.GREATER_THAN);
+            if (txHashYieldTUSD == null) {
+                updateErrorStatus(order, String.format("Finish order(%s) failed: txHashYieldTUSD=%s", txHashYieldTUSD));
+                return false;
+            }
+
+            if (validateYieldCollateralTxResultGreaterThan(txHashYieldTUSD, order)) return false;
+
+            order.setYieldTUSDTransactionHash(txHashYieldTUSD);
+            order.setStatus(PokketOrderStatus.COMPLETE);
+            repo.save(order);
+            return true;
+        } else {
+            logger.error("order " + orderId + " doesn't exist.");
             return false;
         }
-
-        if (validateYieldCollateralTxResultGreaterThan(txHashYieldTUSD, order)) return false;
-
-        order.setYieldTUSDTransactionHash(txHashYieldTUSD);
-        order.setStatus(PokketOrderStatus.COMPLETE);
-        repo.save(order);
-        return true;
     }
 
     /**
@@ -360,25 +371,31 @@ public class PokketController {
      * @return
      */
     private boolean handleResultLessThanNoRoll(String orderId, String txHashYieldToken, String txHashReturnTUSD) {
-        PokketOrder order = getOrder(orderId);
-        order.setResult(PokketOrderResult.LESS_THAN_NO_ROLL);
-        if (txHashYieldToken == null || txHashReturnTUSD == null) {
-            updateErrorStatus(order, String.format("Finish order(%s) failed: " +
-                    "txHashYieldToken(%s) or txHashReturnTUSD(%s) is missing. ",
-                    order.getOrderId(), txHashYieldToken, txHashReturnTUSD));
-            return false;
-        }
+        Optional<PokketOrder> orderOpt = repo.findById(orderId);
+        if (orderOpt.isPresent()) {
+            PokketOrder order = orderOpt.get();
+            order.setResult(PokketOrderResult.LESS_THAN_NO_ROLL);
+            if (txHashYieldToken == null || txHashReturnTUSD == null) {
+                updateErrorStatus(order, String.format("Finish order(%s) failed: " +
+                                "txHashYieldToken(%s) or txHashReturnTUSD(%s) is missing. ",
+                        order.getOrderId(), txHashYieldToken, txHashReturnTUSD));
+                return false;
+            }
 
-        if (!validateYieldTokenTxResultLessThan(txHashYieldToken, order)) return false;
-        // no need to validate return tusd transaction hash since it's not for this order but for all orders including
-        // new invest and closed orders.
+            if (!validateYieldTokenTxResultLessThan(txHashYieldToken, order)) return false;
+            // no need to validate return tusd transaction hash since it's not for this order but for all orders including
+            // new invest and closed orders.
 //        if (!validateReturnCollateralTxResultLessThan(txHashReturnTUSD, order)) return false;
 
-        order.setYieldTokenTransactionHash(txHashYieldToken);
-        order.setReturnTUSDTransactionHash(txHashReturnTUSD);
-        order.setStatus(PokketOrderStatus.COMPLETE);
-        repo.save(order);
-        return true;
+            order.setYieldTokenTransactionHash(txHashYieldToken);
+            order.setReturnTUSDTransactionHash(txHashReturnTUSD);
+            order.setStatus(PokketOrderStatus.COMPLETE);
+            repo.save(order);
+            return true;
+        } else {
+            logger.error("order " + orderId + " doesn't exist.");
+            return false;
+        }
     }
 
     /**
@@ -541,26 +558,17 @@ public class PokketController {
 
     @PostMapping("/resolveOrder/{orderId}")
     public void resolveError(@PathVariable("orderId") String orderId) {
-        PokketOrder order = getOrder(orderId);
-        List<ErrorItem> errors = order.getErrors();
-        for (ErrorItem item : errors) {
-            item.setResolved(true);
-        }
-        repo.save(order);
-    }
-
-    /**
-     * Fetch pokket order from db.
-     *
-     * @param orderId
-     * @return
-     */
-    private PokketOrder getOrder(String orderId) {
         Optional<PokketOrder> orderOpt = repo.findById(orderId);
-        if (!orderOpt.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Order(" + orderId + ") is not found.");
+        if (orderOpt.isPresent()) {
+            PokketOrder order = orderOpt.get();
+            List<ErrorItem> errors = order.getErrors();
+            for (ErrorItem item : errors) {
+                item.setResolved(true);
+            }
+            repo.save(order);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "order " + orderId + " doesn't exist.");
         }
-        return orderOpt.get();
     }
 
     private void updateErrorStatus(PokketOrder order, String message) {
