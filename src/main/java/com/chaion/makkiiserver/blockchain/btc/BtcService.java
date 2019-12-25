@@ -82,7 +82,6 @@ public class BtcService extends BaseBlockchain {
         try {
             ResponseEntity<String> response = restClient.getForEntity(url, String.class);
             String body = response.getBody();
-            System.out.println(body);
             JsonObject root = new JsonParser().parse(body).getAsJsonObject();
             return BtcTransaction.fromJson(root);
         } catch (HttpStatusCodeException e) {
