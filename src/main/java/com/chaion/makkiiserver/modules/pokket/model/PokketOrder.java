@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +55,8 @@ public class PokketOrder {
     private Long productId;
     @ApiModelProperty(value = "错误历史")
     private List<ErrorItem> errors;
+    @ApiModelProperty(value = "实际返还用户金额,可为投资币种或TUSD")
+    private BigInteger actualAmount;
 
     public void addErrorItem(String errorMessage) {
         ErrorItem errorItem = new ErrorItem();

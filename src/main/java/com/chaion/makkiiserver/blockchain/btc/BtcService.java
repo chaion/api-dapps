@@ -91,7 +91,7 @@ public class BtcService extends BaseBlockchain {
     }
 
     public void checkPendingTxStatus() {
-//        logger.info("check pending btc tx status...");
+        logger.info("check pending btc tx status...");
         for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
             TransactionStatus st = entry.getValue();
             String txId = st.getTxId();
@@ -116,7 +116,7 @@ public class BtcService extends BaseBlockchain {
         }
     }
 
-    public void validateBtcTransaction(String transactionId,
+    public BigInteger validateBtcTransaction(String transactionId,
                                        String from,
                                        String to,
                                        BigDecimal expectedAmount,
@@ -142,7 +142,6 @@ public class BtcService extends BaseBlockchain {
                     " from addresses doesn't contain expected address " + from);
         }
         List<BtcTxVout> vouts = transaction.getVout();
-        boolean hasToAndAmount = false;
         for (BtcTxVout vout : vouts) {
                 boolean hasAddress = false;
                 for (String address: vout.getScriptPubKey().getAddresses()) {
@@ -153,13 +152,10 @@ public class BtcService extends BaseBlockchain {
                 }
                 if (hasAddress) {
                     logger.info("validate btc amount: " + vout.getValue());
-                    hasToAndAmount = true;
-                    break;
+                    return new BigInteger(vout.getValue());
                 }
         }
-        if (!hasToAndAmount){
-            throw new BlockchainException("validate btc transaction(" + transactionId + ") failed: " +
-                    "to address is missing or amount is different.");
-        }
+        throw new BlockchainException("validate btc transaction(" + transactionId + ") failed: " +
+                "to address is missing or amount is different.");
     }
 }

@@ -21,11 +21,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
 import static com.chaion.makkiiserver.modules.pokket.PokketUtil.*;
@@ -50,8 +50,12 @@ public class PokketController {
     BtcService btcService;
     @Autowired
     ModuleConfigRepository moduleRepo;
+
     @Value("${pokket.collateral_address}")
-    String collateralAddress;
+    String pokketCollateralAddress;
+
+    @Value("${pokket.yield_collateral_address}")
+    String pokketYieldCollateralAddress;
 
     @PutMapping("/order")
     public PokketOrder createOrder(@RequestBody CreateOrderReq req) {
@@ -242,12 +246,16 @@ public class PokketController {
     private void validateWithdrawCollateralTx(List<PokketOrder> newOrders,
                                               String transactionHash,
                                               BigDecimal tusdTransfer) {
-        if (!ethService.validateERC20Transaction(transactionHash,
-                collateralAddress,
+        try {
+            BigInteger amount = ethService.validateERC20Transaction(transactionHash,
+                pokketCollateralAddress,
                 POKKET_ETH_WALLET_ADDRESS,
                 TUSD,
                 tusdTransfer.abs(),
-                (a1, a2) -> a1.compareTo(a2) >= 0)) {
+                (a1, a2) -> a1.compareTo(a2) >= 0);
+            logger.info("withdraw tusd tx:" + transactionHash + ", actual amount:" + amount.toString());
+        } catch (BlockchainException e) {
+            logger.error(e.getMessage());
             String errMsg = String.format("Invalid tusd withdraw txhash %s, expected withdraw amount is %s",
                     transactionHash, tusdTransfer);
             for (PokketOrder order : newOrders) {
@@ -267,12 +275,16 @@ public class PokketController {
     private void validateDepositCollateralTx(List<PokketOrder> newOrders,
                                              String transactionHash,
                                              BigDecimal tusdTransfer) {
-        if (!ethService.validateERC20Transaction(transactionHash,
-                POKKET_ETH_WALLET_ADDRESS,
-                collateralAddress,
-                TUSD,
-                tusdTransfer.abs(),
-                (a1, a2) -> a1.compareTo(a2) >= 0)) {
+        try {
+            BigInteger amount = ethService.validateERC20Transaction(transactionHash,
+                    POKKET_ETH_WALLET_ADDRESS,
+                    pokketCollateralAddress,
+                    TUSD,
+                    tusdTransfer.abs(),
+                    (a1, a2) -> a1.compareTo(a2) >= 0);
+            logger.info("deposit tusd tx:" + transactionHash + ", actual amount:" + amount.toString());
+        } catch(BlockchainException e) {
+            logger.error(e.getMessage());
             String errMsg = String.format("Invalid tusd deposit txhash %s , expected deposit amount is %s",
                         transactionHash, tusdTransfer);
             for (PokketOrder order : newOrders) {
@@ -347,19 +359,22 @@ public class PokketController {
                 order.getToken2Collateral(),
                 order.getWeeklyInterestRate());
         String expectedTo = order.getCollateralAddress() != null ? order.getCollateralAddress() : order.getInvestorAddress();
-        // TODO: validate from/to
-        if (!ethService.validateERC20Transaction(txHashYieldTUSD,
-                POKKET_ETH_WALLET_ADDRESS,
-                null/*expectedTo*/,
-                TUSD,
-                expectedTUSD,
+        try {
+            BigInteger amount = ethService.validateERC20Transaction(txHashYieldTUSD,
+                    pokketYieldCollateralAddress,
+                    expectedTo,
+                    TUSD,
+                    expectedTUSD,
 //                (a1, a2) -> a1.compareTo(a2) == 0)) {
-                (a1, a2) -> true)) {
+                    (a1, a2) -> true);
+            order.setActualAmount(amount);
+            return true;
+        } catch (BlockchainException e) {
+            logger.error(e.getMessage());
             updateErrorStatus(order, String.format("Finish order(%s) failed: Yield TUSD transaction(%s) is invalid",
                     order.getOrderId(), txHashYieldTUSD));
-            return true;
+            return false;
         }
-        return false;
     }
 
     /**
@@ -409,16 +424,19 @@ public class PokketController {
         BigDecimal expectedTUSD = PokketUtil.calculateCollateral(order.getAmount(),
                 order.getToken2Collateral(),
                 order.getWeeklyInterestRate());
-        if (!ethService.validateERC20Transaction(txHashReturnTUSD,
-                collateralAddress,
-                POKKET_ETH_WALLET_ADDRESS,
-                TUSD,
-                expectedTUSD,
-                (a1, a2) -> a1.compareTo(a2) == 0)) {
+        try {
+            ethService.validateERC20Transaction(txHashReturnTUSD,
+                    pokketCollateralAddress,
+                    POKKET_ETH_WALLET_ADDRESS,
+                    TUSD,
+                    expectedTUSD,
+                    (a1, a2) -> a1.compareTo(a2) == 0);
+            return true;
+        } catch (BlockchainException e) {
+            logger.error(e.getMessage());
             updateErrorStatus(order, String.format("Finish order(%s) failed: Return TUSD transaction(%s) is invalid", order.getOrderId(), txHashReturnTUSD));
             return false;
         }
-        return true;
     }
 
     /**
@@ -434,47 +452,57 @@ public class PokketController {
         BigDecimal expectedAmount = PokketUtil.calculateProfit(order.getAmount(), order.getWeeklyInterestRate());
         if (BTC.equalsIgnoreCase(token)) {
             try {
-                btcService.validateBtcTransaction(
+                BigInteger actualAmount = btcService.validateBtcTransaction(
                         txHashYieldToken,
                         POKKET_BTC_WALLET_ADDRESS,
                         order.getInvestorAddress(),
                         expectedAmount,
                         (a1, a2) -> true);
+                order.setActualAmount(actualAmount);
+                return true;
             } catch (BlockchainException e) {
                 updateErrorStatus(order, String.format("Finish order(%s) failed: yield token tx(%s) is invalid: %s",
                         order, txHashYieldToken, e.getMessage()));
                 return false;
             }
         } else if (ETH.equalsIgnoreCase(token)) {
-            if (!ethService.validateEthTx(txHashYieldToken,
+            try {
+                BigInteger actualAmount = ethService.validateEthTx(txHashYieldToken,
                     POKKET_ETH_WALLET_ADDRESS,
                     order.getInvestorAddress(),
                     expectedAmount,
                     // !!! WE DO NOT check actual amount because pokket dynamic reduce tokens that to cover eth transaction fee.
                     // !!! and eth->token rates are changing, pokket doesn't provide api to get this rate.
                     // (a1, a2)-> a1.compareTo(a2) == 0)) {
-                    (a1, a2)-> true)) {
+                    (a1, a2)-> true);
+                order.setActualAmount(actualAmount);
+                return true;
+            } catch (BlockchainException e) {
                 updateErrorStatus(order,
                         String.format("Finish order(%s) failed: Yield token transaction(%s) is invalid",
                                 orderId, txHashYieldToken));
                 return false;
             }
         } else {
-            if (!ethService.validateERC20Transaction(txHashYieldToken,
-                    POKKET_ETH_WALLET_ADDRESS,
-                    order.getInvestorAddress(),
-                    order.getToken(),
-                    expectedAmount,
-                    // !!! WE DO NOT check actual amount because pokket dynamic reduce tokens that to cover eth transaction fee.
-                    // !!! and eth->token rates are changing, pokket doesn't provide api to get this rate.
-                    // (a1, a2) -> a1.compareTo(a2) == 0)) {
-                    (a1, a2) -> true)) {
+            try {
+                BigInteger actualAmount = ethService.validateERC20Transaction(txHashYieldToken,
+                        POKKET_ETH_WALLET_ADDRESS,
+                        order.getInvestorAddress(),
+                        order.getToken(),
+                        expectedAmount,
+                        // !!! WE DO NOT check actual amount because pokket dynamic reduce tokens that to cover eth transaction fee.
+                        // !!! and eth->token rates are changing, pokket doesn't provide api to get this rate.
+                        // (a1, a2) -> a1.compareTo(a2) == 0)) {
+                        (a1, a2) -> true);
+                order.setActualAmount(actualAmount);
+                return true;
+            } catch (BlockchainException e) {
+                logger.error(e.getMessage());
                 updateErrorStatus(order, String.format("Finish Order(%s) failed: Yield token transaction(%s) is invalid",
                         orderId, txHashYieldToken));
                 return false;
             }
         }
-        return true;
     }
 
 

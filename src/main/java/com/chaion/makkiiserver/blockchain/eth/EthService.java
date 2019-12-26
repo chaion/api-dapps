@@ -258,11 +258,24 @@ public class EthService extends BaseBlockchain {
         }
     }
 
-    public boolean validateERC20Transaction(String transactionHash,
+    /**
+     * Validate transaction details and get actual transaction amount
+     *
+     * @param transactionHash
+     * @param expectedFrom
+     * @param expectedTo
+     * @param token
+     * @param expectedAmount
+     * @param amountValidator
+     * @return
+     */
+    public BigInteger validateERC20Transaction(String transactionHash,
                                             String expectedFrom,
                                             String expectedTo,
                                             String token,
-                                            BigDecimal expectedAmount, BiFunction<BigInteger, BigInteger, Boolean> amountValidator) {
+                                            BigDecimal expectedAmount,
+                                            BiFunction<BigInteger, BigInteger, Boolean> amountValidator)
+            throws BlockchainException {
         logger.info("validate erc20 transfer transaction[transactionHash=" + transactionHash +
                 ",from=" + expectedFrom +
                 ",to=" + expectedTo +
@@ -272,22 +285,18 @@ public class EthService extends BaseBlockchain {
         try {
             receiptResp = ethWeb3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
         } catch (Exception e) {
-            logger.error("validate erc20 failed: getTransactionReceipt", e);
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransactionReceipt: " + e.getMessage());
         }
         if (receiptResp.hasError()) {
-            logger.error("validate erc20 failed: getTransactionReceipt has error", receiptResp.getError());
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransactionReceipt has error: " + receiptResp.getError().toString());
         }
         Optional<TransactionReceipt> receiptOpt = receiptResp.getTransactionReceipt();
         if (!receiptOpt.isPresent()) {
-            logger.error("validate erc20 failed: getTransactionReceipt is not present");
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransactionReceipt is not present");
         }
         TransactionReceipt receipt = receiptOpt.get();
         if (expectedFrom != null && !receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
-            logger.error("validate erc20 failed: from address is different: " + receipt.getFrom());
-            return false;
+            throw new BlockchainException("validate erc20 failed: from address is different: " + receipt.getFrom());
         }
         List<EthToken> ethTokens = null;
         if (appEnv.equalsIgnoreCase("pokket")) {
@@ -303,29 +312,24 @@ public class EthService extends BaseBlockchain {
             }
         }
         if (!isToAddressCorrect) {
-            logger.error("validate erc20 failed: " + receipt.getTo() + " is not " + token + "'s contract address.");
-            return false;
+            throw new BlockchainException("validate erc20 failed: " + receipt.getTo() + " is not " + token + "'s contract address.");
         }
         if (!receipt.isStatusOK()) {
-            logger.error("validate erc20 failed: receipt status is not ok");
-            return false;
+            throw new BlockchainException("validate erc20 failed: receipt status is not ok");
         }
 
         EthTransaction transactionResp = null;
         try {
             transactionResp = ethWeb3j.ethGetTransactionByHash(transactionHash).sendAsync().get();
         } catch (Exception e) {
-            logger.error("validate erc20 failed: getTransactionByHash failed.", e);
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransactionByHash failed." + e.getMessage());
         }
         if (transactionResp.hasError()) {
-            logger.error("validate erc20 failed: getTransactionByHash has error", transactionResp.getError());
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransactionByHash has error" + transactionResp.getError().toString());
         }
         Optional<Transaction> transactionOpt = transactionResp.getTransaction();
         if (!transactionOpt.isPresent()) {
-            logger.error("validate erc20 failed: getTransaction is not present.");
-            return false;
+            throw new BlockchainException("validate erc20 failed: getTransaction is not present.");
         }
         Transaction transaction = transactionOpt.get();
         String input = transaction.getInput();
@@ -341,24 +345,24 @@ public class EthService extends BaseBlockchain {
             Uint256 amount = (Uint256) refMethod.invoke(null, value, 0, Uint256.class);
             // validate amount and to in input
             if (expectedTo != null && !address.getValue().equalsIgnoreCase(expectedTo)) {
-                logger.error("validate failed: to address is different: " + address.getValue());
-                return false;
+                throw new BlockchainException("validate failed: to address is different: " + address.getValue());
             }
             BigInteger expectedAmountBI = expectedAmount.scaleByPowerOfTen(18).toBigInteger();
             if (!(amountValidator != null && amountValidator.apply(amount.getValue(), expectedAmountBI)) ||
                     (amountValidator == null && amount.getValue().compareTo(expectedAmountBI) != 0)) {
-                logger.error("validate failed: expected amount is " + expectedAmountBI + ", actual amount is" + amount.getValue());
-                return false;
+                throw new BlockchainException("validate failed: expected amount is " + expectedAmountBI + ", actual amount is" + amount.getValue());
             }
+            return amount.getValue();
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            logger.error("validated failed: decode input data failed");
-            return false;
+            throw new BlockchainException("validated failed: decode input data failed");
         }
-        return true;
     }
 
-    public boolean validateEthTx(String transactionHash, String expectedFrom, String expectedTo,
-                                 BigDecimal expectedAmount, BiFunction<BigInteger, BigInteger, Boolean> amountValidator) {
+    public BigInteger validateEthTx(String transactionHash,
+                                 String expectedFrom,
+                                 String expectedTo,
+                                 BigDecimal expectedAmount,
+                                 BiFunction<BigInteger, BigInteger, Boolean> amountValidator) throws BlockchainException {
         logger.info("validate eth transfer transaction[transactionHash=" + transactionHash +
                 ", from=" + expectedFrom +
                 ", to=" + expectedTo +
@@ -367,58 +371,48 @@ public class EthService extends BaseBlockchain {
         try {
             receiptResp = ethWeb3j.ethGetTransactionReceipt(transactionHash).sendAsync().get();
         } catch (Exception e) {
-            logger.error("validate failed: getTransactionReceipt exception: " + e.getMessage());
-            return false;
+            throw new BlockchainException("validate failed: getTransactionReceipt exception: " + e.getMessage());
         }
         logger.debug("receiptResp: " + receiptResp);
         if (receiptResp.hasError()) {
-            logger.error("validate failed: getTransactionReceipt has error");
-            return false;
+            throw new BlockchainException("validate failed: getTransactionReceipt has error");
         }
         Optional<TransactionReceipt> receiptOpt = receiptResp.getTransactionReceipt();
         if (!receiptOpt.isPresent()) {
-            logger.error("validate failed: getTransactionReceipt is not present");
-            return false;
+            throw new BlockchainException("validate failed: getTransactionReceipt is not present");
         }
         TransactionReceipt receipt = receiptOpt.get();
         if (expectedFrom != null && !receipt.getFrom().equalsIgnoreCase(expectedFrom)) {
-            logger.error("validate failed: from address is different: " + receipt.getFrom());
-            return false;
+            throw new BlockchainException("validate failed: from address is different: " + receipt.getFrom());
         }
         if (!receipt.getTo().equalsIgnoreCase(expectedTo)) {
-            logger.error("validate failed: to address is different: " + receipt.getTo());
-            return false;
+            throw new BlockchainException("validate failed: to address is different: " + receipt.getTo());
         }
         if (!receipt.isStatusOK()) {
-            logger.error("validate failed: receipt status is not OK");
-            return false;
+            throw new BlockchainException("validate failed: receipt status is not OK");
         }
 
         EthTransaction transactionResp = null;
         try {
             transactionResp = ethWeb3j.ethGetTransactionByHash(transactionHash).sendAsync().get();
         } catch (Exception e) {
-            logger.error("validate failed: getTransactionByHash exception: ", e);
-            return false;
+            throw new BlockchainException("validate failed: getTransactionByHash exception: " + e.getMessage());
         }
         if (transactionResp.hasError()) {
-            logger.error("validate failed: getTransactionByHash has error.");
-            return false;
+            throw new BlockchainException("validate failed: getTransactionByHash has error.");
         }
         Optional<Transaction> transactionOpt = transactionResp.getTransaction();
         if (!transactionOpt.isPresent()) {
-            logger.error("validate failed: getTransactionByHash is not present.");
-            return false;
+            throw new BlockchainException("validate failed: getTransactionByHash is not present.");
         }
         Transaction transaction = transactionOpt.get();
         BigInteger actualAmount = transaction.getValue();
         BigInteger expectedAmountBI = expectedAmount.scaleByPowerOfTen(18).toBigInteger();
         if (!(amountValidator != null && amountValidator.apply(actualAmount, expectedAmountBI)) ||
                 (amountValidator == null && actualAmount.compareTo(expectedAmountBI) != 0)) {
-            logger.error("validate failed: expected amount is " + expectedAmount.scaleByPowerOfTen(18) + ", actual is " + actualAmount);
-            return false;
+            throw new BlockchainException("validate failed: expected amount is " + expectedAmount.scaleByPowerOfTen(18) + ", actual is " + actualAmount);
         }
-        return true;
+        return actualAmount;
     }
 
     /**
