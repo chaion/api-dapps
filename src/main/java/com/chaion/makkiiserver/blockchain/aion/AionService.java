@@ -2,9 +2,12 @@ package com.chaion.makkiiserver.blockchain.aion;
 
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.TransactionConfirmEvent;
 import com.chaion.makkiiserver.blockchain.TransactionStatus;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.web3j.aion.AionConstants;
@@ -21,23 +24,29 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class AionService extends BaseBlockchain {
 
     private static final Long DEFAULT_GAS_PRICE = 20*1000000000l;
-
     private static final Logger logger = LoggerFactory.getLogger(AionService.class);
+    public static final String AION_CHAIN = "Aion";
 
     private Aion aion;
+
+    @Autowired
+    private EventBus eventBus;
 
     public AionService(@Value("${blockchain.aion.apiserver}") String rpcServer) {
         aion = Aion.build(new HttpService(rpcServer));
         logger.info("old request mixin is: " + ObjectMapperFactory.getObjectMapper().findMixInClassFor(Request.class));
         ObjectMapperFactory.getObjectMapper().addMixIn(Request.class, null);
         logger.info("new Request mixin is: " + ObjectMapperFactory.getObjectMapper().findMixInClassFor(Request.class));
+    }
+
+    public String getName() {
+        return AION_CHAIN;
     }
 
     /**
@@ -73,15 +82,12 @@ public class AionService extends BaseBlockchain {
     }
 
     @Override
-    public void checkPendingTxStatus() {
+    public void checkPendingTxStatus(TransactionStatus st) {
 //        logger.info("check pending aion tx status...");
-        for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
-            TransactionStatus st = entry.getValue();
-            String txHash = st.getTxId();
-            logger.info("processing tx: " + txHash + " " + st.getStatus());
-            if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
-                checkTxStatusOfReceipt(st, txHash);
-            }
+        String txHash = st.getTxId();
+        logger.info("processing tx: " + txHash + " " + st.getStatus());
+        if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
+            checkTxStatusOfReceipt(st, txHash);
         }
     }
 
@@ -113,8 +119,10 @@ public class AionService extends BaseBlockchain {
         if (receipt == null) return;
         logger.info("tx[" + txHash + "] receipt is confirmed " + receipt.isStatusOK());
         st.setStatus(TransactionStatus.CONFIRMED);
-        pendingTransactions.remove(txHash);
-        st.getListener().transactionConfirmed(txHash, receipt.isStatusOK());
+        st.setResult(receipt.isStatusOK());
+        txStatusRepo.save(st);
+        logger.info("send transaction confirm event: " + st);
+        eventBus.post(new TransactionConfirmEvent(st));
     }
 
     @Override

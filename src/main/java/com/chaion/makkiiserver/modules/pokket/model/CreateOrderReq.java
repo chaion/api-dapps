@@ -41,4 +41,6 @@ public class CreateOrderReq {
     @ApiModelProperty(value="raw交易数据", notes = "投资者转账至Pokket储蓄账户的交易哈希")
     @NotEmpty
     private String rawTransaction;
+    @ApiModelProperty(value="允许小数点位数")
+    private Integer allowedDecimals;
 }

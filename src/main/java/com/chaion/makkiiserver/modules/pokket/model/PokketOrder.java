@@ -25,6 +25,8 @@ public class PokketOrder {
     private String token;
     @ApiModelProperty(value = "投资代币全称")
     private String tokenFullName;
+    @ApiModelProperty(value = "小数点后几位")
+    private Integer allowedDecimals;
     @ApiModelProperty(value = "投资金额")
     private BigDecimal amount;
     @ApiModelProperty(value = "投资代币兑TUSD")

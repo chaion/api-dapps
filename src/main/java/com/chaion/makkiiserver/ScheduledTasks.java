@@ -65,7 +65,7 @@ public class ScheduledTasks {
      */
    @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingEthTxStatus() {
-        ethService.checkPendingTxStatus();
+        ethService.checkPendingTxsStatus();
     }
 
     // production
@@ -73,16 +73,21 @@ public class ScheduledTasks {
     // test
    @Scheduled(fixedRate = 15 * 1000)
     public void checkPendingBtcTxStatus() {
-        btcService.checkPendingTxStatus();
+        btcService.checkPendingTxsStatus();
     }
 
     @Scheduled(fixedRate = 10 * 1000)
     public void checkPendingAionTxStatus() {
-        aionService.checkPendingTxStatus();
+        aionService.checkPendingTxsStatus();
     }
 
     @Scheduled(fixedRate = 10 * 1000)
     public void refreshPokketProductList() {
         pokketService.refreshProductList();
+    }
+
+    @Scheduled(fixedRate = 15 * 24 * 60 * 60 * 1000)
+    public void refreshPokketWithdrawFees() {
+       pokketService.refreshWithdrawFees();
     }
 }

@@ -1,8 +1,10 @@
 package com.chaion.makkiiserver.blockchain.btc;
 
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.TransactionConfirmEvent;
 import com.chaion.makkiiserver.blockchain.TransactionStatus;
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
+import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -27,14 +29,23 @@ import java.util.function.BiFunction;
 @Service
 public class BtcService extends BaseBlockchain {
     private static final Logger logger = LoggerFactory.getLogger(BtcService.class);
+    public static final String BITCOIN_CHAIN = "Bitcoin";
 
     @Autowired
     private RestTemplate restClient;
+    @Autowired
+    EventBus eventBus;
 
     private String baseurl;
 
     public BtcService(@Value("${blockchain.btc.apiserver}") String apiServer) {
         this.baseurl = apiServer;
+    }
+
+
+    @Override
+    public String getName() {
+        return BITCOIN_CHAIN;
     }
 
     public String sendRawTransaction(String rawTransaction) throws BlockchainException {
@@ -90,29 +101,29 @@ public class BtcService extends BaseBlockchain {
         }
     }
 
-    public void checkPendingTxStatus() {
+    public void checkPendingTxStatus(TransactionStatus st) {
         logger.info("check pending btc tx status...");
-        for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
-            TransactionStatus st = entry.getValue();
-            String txId = st.getTxId();
-            logger.info("processing tx: " + txId + " " + st.getStatus());
-            BtcTransaction tx = null;
-            try {
-                tx = getTransaction(txId);
-                if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
-                    st.setStatus(TransactionStatus.WAIT_BLOCK_NUMBER);
-                    st.setBlockNumber(tx.getBlockHeight());
-                } else if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_BLOCK_NUMBER)) {
-                    if (tx.getBlockHeight().subtract(st.getBlockNumber()).longValue() > 6) {
-                        st.setStatus(TransactionStatus.CONFIRMED);
-                        pendingTransactions.remove(txId);
-                        st.getListener().transactionConfirmed(txId, true);
-                    }
+        String txId = st.getTxId();
+        logger.info("processing tx: " + txId + " " + st.getStatus());
+        BtcTransaction tx = null;
+        try {
+            tx = getTransaction(txId);
+            if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
+                st.setStatus(TransactionStatus.WAIT_BLOCK_NUMBER);
+                st.setBlockNumber(tx.getBlockHeight());
+                txStatusRepo.save(st);
+            } else if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_BLOCK_NUMBER)) {
+                if (tx.getBlockHeight().subtract(st.getBlockNumber()).longValue() > 6) {
+                    st.setStatus(TransactionStatus.CONFIRMED);
+                    st.setResult(true);
+                    txStatusRepo.save(st);
+                    logger.info("send transaction confirm event: " + st);
+                    eventBus.post(new TransactionConfirmEvent(st));
                 }
-            } catch (BlockchainException e) {
-                logger.error("getTransaction of " + txId + " failed:" + e.getMessage() + ".");
-                logger.info("skip tx " + txId);
             }
+        } catch (BlockchainException e) {
+            logger.error("getTransaction of " + txId + " failed:" + e.getMessage() + ".");
+            logger.info("skip tx " + txId);
         }
     }
 

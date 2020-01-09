@@ -2,9 +2,11 @@ package com.chaion.makkiiserver.blockchain.eth;
 
 import com.chaion.makkiiserver.blockchain.BaseBlockchain;
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.TransactionConfirmEvent;
 import com.chaion.makkiiserver.modules.blockchain.token.EthToken;
 import com.chaion.makkiiserver.blockchain.TransactionStatus;
 import com.chaion.makkiiserver.modules.blockchain.token.EthTokenRepository;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -32,6 +33,12 @@ import java.util.function.BiFunction;
 public class EthService extends BaseBlockchain {
 
     private static final Logger logger = LoggerFactory.getLogger(EthService.class);
+
+    public static final String POKKET_CHAIN = "PokketChain";
+    public static final String ETHEREUM_CHAIN = "Ethereum";
+
+    @Autowired
+    EventBus eventBus;
 
     @Autowired
     EthTokenRepository ethTokenRepo;
@@ -51,6 +58,15 @@ public class EthService extends BaseBlockchain {
             ethWeb3j = AlethWeb3j.build(new UnixIpcService(rpcServer));
         } else {
             ethWeb3j = Web3j.build(new HttpService(rpcServer));
+        }
+    }
+
+    @Override
+    public String getName() {
+        if (appEnv.equalsIgnoreCase("pokket")) {
+            return POKKET_CHAIN;
+        } else {
+            return ETHEREUM_CHAIN;
         }
     }
 
@@ -196,17 +212,14 @@ public class EthService extends BaseBlockchain {
 
     }
 
-    public void checkPendingTxStatus() {
+    public void checkPendingTxStatus(TransactionStatus st) {
 //        logger.info("check pending eth tx status...");
-        for (Map.Entry<String, TransactionStatus> entry : pendingTransactions.entrySet()) {
-            TransactionStatus st = entry.getValue();
-            String txHash = st.getTxId();
-            logger.info("processing tx: " + txHash + " " + st.getStatus());
-            if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
-                checkTxStatusOfReceipt(st, txHash);
-            } else if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_BLOCK_NUMBER)) {
-                checkTxStatusOfBlockNumber(st, txHash);
-            }
+        String txHash = st.getTxId();
+        logger.info("processing tx: " + txHash + " " + st.getStatus());
+        if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_RECEIPT)) {
+            checkTxStatusOfReceipt(st, txHash);
+        } else if (st.getStatus().equalsIgnoreCase(TransactionStatus.WAIT_BLOCK_NUMBER)) {
+            checkTxStatusOfBlockNumber(st, txHash);
         }
     }
 
@@ -226,8 +239,9 @@ public class EthService extends BaseBlockchain {
         logger.info("tx[" + txHash + "] tx block number=" + st.getBlockNumber() + ", latest block number=" + blockNumber);
         if (blockNumber.subtract(st.getBlockNumber()).longValue() > 6) {
             st.setStatus(TransactionStatus.CONFIRMED);
-            pendingTransactions.remove(txHash);
-            st.getListener().transactionConfirmed(txHash, true);
+            txStatusRepo.save(st);
+            logger.info("send transaction confirm event: " + st);
+            eventBus.post(new TransactionConfirmEvent(st));
         }
     }
 
@@ -251,10 +265,14 @@ public class EthService extends BaseBlockchain {
                 st.setBlockNumber(receipt.getBlockNumber());
             }
             st.setStatus(TransactionStatus.WAIT_BLOCK_NUMBER);
+            st.setResult(true);
+            txStatusRepo.save(st);
         } else {
             logger.info("tx[" + txHash + "] receipt is confirmed fail");
-            st.getListener().transactionConfirmed(txHash, false);
-            pendingTransactions.remove(txHash);
+            st.setStatus(TransactionStatus.CONFIRMED);
+            st.setResult(false);
+            txStatusRepo.save(st);
+            eventBus.post(new TransactionConfirmEvent(st));
         }
     }
 

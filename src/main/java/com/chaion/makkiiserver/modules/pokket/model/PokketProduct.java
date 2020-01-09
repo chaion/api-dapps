@@ -23,4 +23,6 @@ public class PokketProduct {
     private BigDecimal minInvestAmount;
     @ApiModelProperty(value = "投资币种兑TUSD")
     private BigDecimal token2Collateral;
+    @ApiModelProperty(value = "允许的小数点位数")
+    private Integer allowedDecimals;
 }

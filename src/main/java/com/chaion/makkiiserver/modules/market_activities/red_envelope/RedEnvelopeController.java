@@ -1,9 +1,13 @@
 package com.chaion.makkiiserver.modules.market_activities.red_envelope;
 
 import com.chaion.makkiiserver.blockchain.BlockchainException;
+import com.chaion.makkiiserver.blockchain.TransactionConfirmEvent;
+import com.chaion.makkiiserver.blockchain.TransactionStatus;
 import com.chaion.makkiiserver.blockchain.aion.AionService;
 import com.chaion.makkiiserver.modules.config.ModuleConfig;
 import com.chaion.makkiiserver.modules.config.ModuleConfigRepository;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,11 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+
+import static com.chaion.makkiiserver.blockchain.TransactionStatus.KEY_DOMAIN;
 
 @RestController
 @RequestMapping("market_activity/red_envelope")
@@ -29,7 +33,14 @@ public class RedEnvelopeController {
     RedEnvelopeHistoryRepo repo;
     @Autowired
     AionService aionService;
+    @Autowired
+    EventBus eventBus;
 
+    @PostConstruct
+    public void init() {
+        logger.info("register RedEnvelopeController to event bus.");
+        eventBus.register(this);
+    }
 
     @GetMapping(value = "/image", produces = "application/json; charset=utf-8")
     public String getImage() {
@@ -124,14 +135,9 @@ public class RedEnvelopeController {
         try {
             txHash = aionService.sendTransaction(pk, address, BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(18)));
             logger.info("add tx {} to pending queue, wait confirmation.", txHash);
-            aionService.addPendingTransaction(txHash, ((transactionHash, status) -> {
-                RedEnvelopeHistory record = repo.findFirstByTxHash(transactionHash);
-                if (record != null) {
-                    record.setStatus(status? RedEnvelopeHsitoryStatus.SUCCESS: RedEnvelopeHsitoryStatus.FAIL);
-                    repo.save(record);
-                    logger.info("{} is updated as {}", transactionHash, status);
-                }
-            }));
+            Map<String, Object> customData = new HashMap<>();
+            customData.put(KEY_DOMAIN, "red_envelope");
+            aionService.addPendingTransaction(txHash, customData);
         } catch (BlockchainException e) {
             return errorJsonObject("send transaction fail: " + e.getMessage()).toString();
         }
@@ -164,5 +170,25 @@ public class RedEnvelopeController {
             o.add("data", data);
         }
         return o;
+    }
+
+    @Subscribe
+    public void handleTransactionConfirm(TransactionConfirmEvent event) {
+        TransactionStatus ts = event.getStatus();
+        Map<String, Object> customData = ts.getCustomData();
+        if ("red_envelope".equalsIgnoreCase((String) customData.get(KEY_DOMAIN))) {
+            RedEnvelopeHistory record = repo.findFirstByTxHash(ts.getTxId());
+            if (record != null) {
+                if (ts.getStatus().equalsIgnoreCase(TransactionStatus.CONFIRMED)) {
+                    record.setStatus(ts.isResult() ? RedEnvelopeHsitoryStatus.SUCCESS : RedEnvelopeHsitoryStatus.FAIL);
+                    repo.save(record);
+                    logger.info("{} is updated as {}", ts.getTxId(), ts.isResult());
+                } else if (ts.getStatus().equalsIgnoreCase(TransactionStatus.TIMEOUT)) {
+                    record.setStatus(RedEnvelopeHsitoryStatus.FAIL);
+                    repo.save(record);
+                    logger.info("{} is updated as {}", ts.getTxId(), "timeout");
+                }
+            }
+        }
     }
 }
