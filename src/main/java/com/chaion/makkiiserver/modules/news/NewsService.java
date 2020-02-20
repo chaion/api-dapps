@@ -11,6 +11,9 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -26,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class NewsService {
@@ -77,15 +81,17 @@ public class NewsService {
     public void fetch(String name, String url) throws IOException, FeedException {
         logger.info("fetching {} news from {}...", name, url);
 
-        URL feedSource = new URL(url);
+        OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS).build();
+        Request request = new Request.Builder().url(url).build();
+        Response response = httpClient.newCall(request).execute();
         SyndFeedInput input = new SyndFeedInput();
-        SyndFeed feed = input.build(new XmlReader(feedSource));
+        SyndFeed feed = input.build(new XmlReader(response.body().byteStream()));
         List<SyndEntry> list = feed.getEntries();
         for (SyndEntry entry : list) {
             NewsItem item = NewsItem.fromSyndEntry(entry);
             item.setSource(name);
 
-            if (!repo.findById(item.getId()).isPresent()) {
+            if (repo.findById(item.getId()).isEmpty()) {
                 repo.save(item);
             }
         }
