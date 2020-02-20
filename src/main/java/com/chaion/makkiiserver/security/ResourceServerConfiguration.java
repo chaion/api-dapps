@@ -43,7 +43,8 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                         "/token/eth/search/",
                         "/token/eth/popular",
                         "/token/eth/token_name",
-                        "/token/eth/img"
+                        "/token/eth/img",
+                        "/appVersion/latest"
                 ).permitAll()
                 .anyRequest().authenticated();
     }

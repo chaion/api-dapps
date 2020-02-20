@@ -56,7 +56,7 @@ public class AppVersionController {
     }
 
 
-    @PreAuthorize("hasRole('ROLE_MAKKII')")
+//    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get the latest app version",
             notes = "The returned version's mandatory is true if any version later than the given one is mandatory.",
             response=AppVersion.class,
