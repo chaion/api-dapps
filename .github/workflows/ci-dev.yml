@@ -33,4 +33,16 @@ jobs:
         source: 'target/makkiiserver-*-SNAPSHOT.jar'
         target: '/root/bin/makkii-server/'
         strip_components: 1
+        
+    - name: restart makkii server
+      uses: appleboy/ssh-action@v0.0.7
+      with:
+        host: ${{ secrets.qa_server_host}}
+        key:  ${{ secrets.ssh_privatekey }}
+        username: ${{ secrets.qa_server_username }}
+        script_stop: true
+        script: |
+          pkill makkiiserver & echo "kill makkii server process"
+          cd /root/bin/makkii-server
+          nohup java -jar `ls -t makkiiserver-*.jar | head -1` > logs/log 2>&1 &
 
