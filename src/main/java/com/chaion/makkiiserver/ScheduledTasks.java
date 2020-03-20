@@ -63,31 +63,31 @@ public class ScheduledTasks {
     /**
      * check pending transaction status every 10 seconds
      */
-   @Scheduled(fixedRate = 10 * 1000)
-    public void checkPendingEthTxStatus() {
-        ethService.checkPendingTxsStatus();
-    }
+//   @Scheduled(fixedRate = 10 * 1000)
+//    public void checkPendingEthTxStatus() {
+//        ethService.checkPendingTxsStatus();
+//    }
 
     // production
 //    @Scheduled(fixedRate = 10 * 60 * 1000)
     // test
-   @Scheduled(fixedRate = 15 * 1000)
-    public void checkPendingBtcTxStatus() {
-        btcService.checkPendingTxsStatus();
-    }
+//   @Scheduled(fixedRate = 15 * 1000)
+//    public void checkPendingBtcTxStatus() {
+//        btcService.checkPendingTxsStatus();
+//    }
+//
+//    @Scheduled(fixedRate = 10 * 1000)
+//    public void checkPendingAionTxStatus() {
+//        aionService.checkPendingTxsStatus();
+//    }
 
-    @Scheduled(fixedRate = 10 * 1000)
-    public void checkPendingAionTxStatus() {
-        aionService.checkPendingTxsStatus();
-    }
+//    @Scheduled(fixedRate = 10 * 1000)
+//    public void refreshPokketProductList() {
+//        pokketService.refreshProductList();
+//    }
 
-    @Scheduled(fixedRate = 10 * 1000)
-    public void refreshPokketProductList() {
-        pokketService.refreshProductList();
-    }
-
-    @Scheduled(fixedRate = 15 * 24 * 60 * 60 * 1000)
-    public void refreshPokketWithdrawFees() {
-       pokketService.refreshWithdrawFees();
-    }
+//    @Scheduled(fixedRate = 15 * 24 * 60 * 60 * 1000)
+//    public void refreshPokketWithdrawFees() {
+//       pokketService.refreshWithdrawFees();
+//    }
 }
