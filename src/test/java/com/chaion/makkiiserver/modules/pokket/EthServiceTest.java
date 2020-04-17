@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.web3j.protocol.core.methods.response.EthBlock;
 
@@ -56,6 +57,7 @@ public class EthServiceTest {
         System.out.println(new Date().toInstant().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
         System.out.println(new Date().toInstant().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT));
         System.out.println(new Date().toInstant().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        System.out.println(new BCryptPasswordEncoder().encode("PLAT4life"));
     }
 
 }
