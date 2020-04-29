@@ -41,7 +41,7 @@ public class FeedbackController {
         notifMsg.getAttachments().add(attach);
         try {
             new Notification().send(notifMsg);
-        } catch (NotificationException e) {
+        } catch (Throwable e) {
             logger.error("send slack notification exception: " + e.getMessage());
         }
 
