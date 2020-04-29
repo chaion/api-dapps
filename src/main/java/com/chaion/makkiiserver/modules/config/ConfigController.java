@@ -1,8 +1,6 @@
 package com.chaion.makkiiserver.modules.config;
 
 import com.chaion.makkiiserver.Utils;
-import com.chaion.makkiiserver.repository.file.StorageException;
-import com.chaion.makkiiserver.repository.file.StorageService;
 import com.google.gson.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.system.ApplicationHome;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

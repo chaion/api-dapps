@@ -1,5 +1,12 @@
 package com.chaion.makkiiserver.modules.feedback;
 
+import com.google.common.collect.ImmutableSet;
+import com.webcerebrium.slack.Notification;
+import com.webcerebrium.slack.NotificationException;
+import com.webcerebrium.slack.SlackMessage;
+import com.webcerebrium.slack.SlackMessageAttachment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +20,8 @@ import java.util.Date;
 @RequestMapping("feedback")
 public class FeedbackController {
 
+    private static final Logger logger = LoggerFactory.getLogger(FeedbackController.class);
+
     @Autowired
     FeedbackRepo repo;
 
@@ -20,7 +29,23 @@ public class FeedbackController {
     @PutMapping
     public Feedback addFeedback(@RequestBody Feedback feedback) {
         feedback.setCreateTime(new Date());
-        return repo.insert(feedback);
+        Feedback inserted = repo.insert(feedback);
+
+        String title = "Makkii Notification";
+        String message = "New Feedback!\n" +
+                inserted.getFeedback();
+        String color = "#66CC00";
+        SlackMessage notifMsg = new SlackMessage();
+        SlackMessageAttachment attach = new SlackMessageAttachment(title, message, color);
+        attach.addMarkdown(ImmutableSet.of("title", "text"));
+        notifMsg.getAttachments().add(attach);
+        try {
+            new Notification().send(notifMsg);
+        } catch (NotificationException e) {
+            logger.error("send slack notification exception: " + e.getMessage());
+        }
+
+        return inserted;
     }
 
     @PreAuthorize("hasRole('ROLE_MAKKII') or hasRole('ROLE_ADMIN')")
