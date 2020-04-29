@@ -42,7 +42,7 @@ jobs:
         username: ${{ secrets.qa_server_username }}
         script_stop: true
         script: |
-          pkill makkiiserver & echo "kill makkii server process"
+          ps a | grep makkii | grep java | awk '{print $1}' | while read line; do kill -9 $line; done
           cd /root/bin/makkii-server
           nohup java -jar `ls -t makkiiserver-*.jar | head -1` > logs/log 2>&1 &
 
