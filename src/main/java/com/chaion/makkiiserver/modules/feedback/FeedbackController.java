@@ -8,6 +8,7 @@ import com.webcerebrium.slack.SlackMessageAttachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,8 @@ public class FeedbackController {
 
     @Autowired
     FeedbackRepo repo;
+    @Value("SLACK_NOTIFICATION_URL")
+    String slackHookUrl;
 
     @PreAuthorize("hasRole('ROLE_MAKKII')")
     @PutMapping
@@ -40,7 +43,7 @@ public class FeedbackController {
         attach.addMarkdown(ImmutableSet.of("title", "text"));
         notifMsg.getAttachments().add(attach);
         try {
-            new Notification().send(notifMsg);
+            new Notification(slackHookUrl).send(notifMsg);
         } catch (Throwable e) {
             logger.error("send slack notification exception: " + e.getMessage());
         }
