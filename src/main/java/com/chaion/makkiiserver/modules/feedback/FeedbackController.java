@@ -25,7 +25,7 @@ public class FeedbackController {
 
     @Autowired
     FeedbackRepo repo;
-    @Value("SLACK_NOTIFICATION_URL")
+    @Value("${SLACK_NOTIFICATION_URL}")
     String slackHookUrl;
 
     @PreAuthorize("hasRole('ROLE_MAKKII')")
@@ -43,6 +43,7 @@ public class FeedbackController {
         attach.addMarkdown(ImmutableSet.of("title", "text"));
         notifMsg.getAttachments().add(attach);
         try {
+            logger.debug("slackHookUrl: ", slackHookUrl);
             new Notification(slackHookUrl).send(notifMsg);
         } catch (Throwable e) {
             logger.error("send slack notification exception: " + e.getMessage());
