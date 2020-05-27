@@ -44,7 +44,8 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
                         "/token/eth/popular",
                         "/token/eth/token_name",
                         "/token/eth/img",
-                        "/appVersion/latest"
+                        "/appVersion/latest",
+                        "/market/prices"
                 ).permitAll()
                 .anyRequest().authenticated();
     }

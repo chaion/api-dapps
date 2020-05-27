@@ -96,7 +96,7 @@ public class ExchangeController {
                 crypto + "<->" + fiat + " exchange rate not found.");
     }
 
-    @PreAuthorize("hasRole('ROLE_MAKKII')")
+//    @PreAuthorize("hasRole('ROLE_MAKKII')")
     @ApiOperation(value="Get batches of exchange rates: crypto currencies -> fiat currencies")
     @GetMapping(value="/market/prices")
     public List<MarketPrice> getPrices(
